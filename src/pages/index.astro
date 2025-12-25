@@ -1,0 +1,101 @@
+---
+import Layout from "../shared/Layout.astro";
+import { getSupabaseServerClient } from "../lib/supabase";
+const supabase = getSupabaseServerClient(Astro);
+const { data } = await supabase.auth.getUser();
+const signedIn = !!data.user;
+---
+<style is:inline>
+  .site-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-primary) 32%, transparent);
+    transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  }
+  .site-badge:hover {
+    background: color-mix(in oklab, var(--color-primary) 18%, transparent);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(59,130,246,.25);
+    color: #fff;
+  }
+  .lead { text-align: justify; }
+</style>
+<Layout title="FastScout Bridge">
+  <section class="grid fade-in" style="max-width:880px; margin:0 auto">
+    <div class="card">
+      <div class="hero">
+        <div style="display:flex; align-items:center; gap:12px">
+          <img src="/logo.png" alt="FastScout" style="width: 64px; height: 64px; border-radius:12px" />
+          <div>
+            <h1 style="margin:0">Surf faster, work smarter.</h1>
+            <p class="lead" style="margin:6px 0 0">FastScout adds a floating Quick Bid panel and a one‑click AutoScout24 search to supported marketplaces. Sign in and features turn on automatically — we grab the right car details for you, no copy‑paste.</p>
+          </div>
+        </div>
+        <div class="hero-actions">
+          {
+            signedIn ? (
+              <>
+                <a href="/dashboard" class="btn btn-primary">Dashboard</a>
+                <a href="/pricing" class="btn btn-outline">View Pricing</a>
+              </>
+            ) : (
+              <>
+                <a href="/pricing" class="btn btn-primary">Get Started</a>
+                <a href="/auth/signin" class="btn btn-outline">Sign In</a>
+              </>
+            )
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 0">
+        <span class="badge" style="font-weight:600">Supported Sites</span>
+        <a class="site-badge" href="https://www.auto1.com" target="_blank" rel="noreferrer">auto1.com</a>
+        <span style="color:var(--color-muted)">·</span>
+        <a class="site-badge" href="https://www.carcollect.com" target="_blank" rel="noreferrer">carcollect.com</a>
+        <span style="color:var(--color-muted)">·</span>
+        <a class="site-badge" href="https://www.fastback-trade.com" target="_blank" rel="noreferrer">fastback‑trade.com</a>
+      </div>
+      <ul class="feature-list" style="margin-top:12px">
+        <li>Collects the right car details for you — no copy‑paste.</li>
+        <li>Builds the best AutoScout24 search with a single click.</li>
+        <li>Keeps you in flow: bid and navigate without switching tabs.</li>
+        <li>Turns features on after sign‑in for subscribed users.</li>
+      </ul>
+      <div class="hero-actions" style="margin-top:24px">
+        <a href="/pricing" class="btn btn-primary">Start in minutes</a>
+        <a href="/dashboard" class="btn">Go to dashboard</a>
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-top:16px">
+      <div class="card feature">
+        <div class="icon"></div>
+        <div>
+          <h3>Quick Bid panel</h3>
+          <p class="lead">Bid fast from any supported listing with a simple floating UI.</p>
+        </div>
+      </div>
+      <div class="card feature">
+        <div class="icon"></div>
+        <div>
+          <h3>One‑click search</h3>
+          <p class="lead">Jump straight to the right results on AutoScout24.</p>
+        </div>
+      </div>
+      <div class="card feature">
+        <div class="icon"></div>
+        <div>
+          <h3>Smart capture</h3>
+          <p class="lead">Pulls the car details you need for quicker decisions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

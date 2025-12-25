@@ -1,0 +1,19 @@
+{
+  "name": "fastscout-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.1",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.87.1",
+    "astro": "^5.16.6",
+    "jsonwebtoken": "^9.0.2",
+    "stripe": "^15.8.0"
+  }
+}

@@ -1,0 +1,126 @@
+---
+import Layout from "../shared/Layout.astro";
+import stripe from "../lib/stripe";
+
+let monthlyId = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
+const yearlyId = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
+const quarterlyId = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
+const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
+const fallbackId = import.meta.env.STRIPE_PRICE_ID as string | undefined;
+if (!monthlyId && fallbackId) monthlyId = fallbackId;
+let monthlyAmount = 500;
+let yearlyAmount = 5000;
+let quarterlyAmount = 1400;
+let halfyearlyAmount = 2700;
+let monthlyCurrency = "USD";
+let yearlyCurrency = "USD";
+let quarterlyCurrency = "USD";
+let halfyearlyCurrency = "USD";
+try {
+  if (monthlyId) {
+    const m = await stripe.prices.retrieve(monthlyId);
+    monthlyAmount = m.unit_amount ?? monthlyAmount;
+    monthlyCurrency = (m.currency ?? monthlyCurrency).toUpperCase();
+  }
+  if (yearlyId) {
+    const y = await stripe.prices.retrieve(yearlyId);
+    yearlyAmount = y.unit_amount ?? yearlyAmount;
+    yearlyCurrency = (y.currency ?? yearlyCurrency).toUpperCase();
+  }
+  if (quarterlyId) {
+    const q = await stripe.prices.retrieve(quarterlyId);
+    quarterlyAmount = q.unit_amount ?? quarterlyAmount;
+    quarterlyCurrency = (q.currency ?? quarterlyCurrency).toUpperCase();
+  }
+  if (halfyearlyId) {
+    const h = await stripe.prices.retrieve(halfyearlyId);
+    halfyearlyAmount = h.unit_amount ?? halfyearlyAmount;
+    halfyearlyCurrency = (h.currency ?? halfyearlyCurrency).toUpperCase();
+  }
+} catch {}
+const monthlyDisplay = `$${(monthlyAmount / 100).toFixed(0)}/month`;
+const yearlyDisplay = `$${(yearlyAmount / 100).toFixed(0)}/year`;
+const quarterlyDisplay = `$${(quarterlyAmount / 100).toFixed(0)}/quarter`;
+const halfyearlyDisplay = `$${(halfyearlyAmount / 100).toFixed(0)}/6 months`;
+---
+<Layout title="Pricing">
+  <section>
+    <h2>Plans</h2>
+    <p class="lead">Simple, transparent pricing. Pick monthly or save with annual.</p>
+    <style is:inline>
+      .pricing-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+      .plan { min-height: 320px; }
+      .plan--featured { min-height: 360px; box-shadow: 0 14px 32px rgba(59,130,246,.22); border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); }
+      .plan .hero-actions { display:flex; }
+      .plan .hero-actions .btn { flex: 1 1 0; min-width: 160px; text-align: center; }
+      @media (max-width: 960px) { .pricing-grid { grid-template-columns: 1fr; } }
+    </style>
+    <div class="pricing-grid" style="margin-top:16px">
+      <div class="card plan">
+        <h3>Monthly</h3>
+        <p class="lead">{monthlyDisplay} · cancel anytime</p>
+        <ul class="feature-list">
+          <li>Dashboard access</li>
+          <li>Extension token</li>
+          <li>Email support</li>
+        </ul>
+        <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Monthly">
+          <input type="hidden" name="plan" value="monthly" />
+          <button class="btn btn-primary" type="submit">Choose Monthly</button>
+          <a class="btn" href="/dashboard">View Dashboard</a>
+        </form>
+      </div>
+      <div class="card plan plan--featured">
+        <div class="badge">Best value</div>
+        <h3>Annual</h3>
+        <p class="lead">{yearlyDisplay} · save over monthly</p>
+        <ul class="feature-list">
+          <li>Dashboard access</li>
+          <li>Extension token</li>
+          <li>Priority support</li>
+        </ul>
+        <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Annual">
+          <input type="hidden" name="plan" value="annual" />
+          <button class="btn btn-primary" type="submit">Choose Annual</button>
+          <a class="btn" href="/dashboard">View Dashboard</a>
+        </form>
+      </div>
+      <div class="card plan">
+        <h3>Half‑yearly</h3>
+        <p class="lead">{halfyearlyDisplay}</p>
+        <ul class="feature-list">
+          <li>Dashboard access</li>
+          <li>Extension token</li>
+          <li>Email support</li>
+        </ul>
+        <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Half-yearly">
+          <input type="hidden" name="plan" value="halfyearly" />
+          <button class="btn btn-primary" type="submit">Choose Half‑yearly</button>
+          <a class="btn" href="/dashboard">View Dashboard</a>
+        </form>
+      </div>
+      <div class="card plan">
+        <h3>Quarterly</h3>
+        <p class="lead">{quarterlyDisplay}</p>
+        <ul class="feature-list">
+          <li>Dashboard access</li>
+          <li>Extension token</li>
+          <li>Email support</li>
+        </ul>
+        <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Quarterly">
+          <input type="hidden" name="plan" value="quarterly" />
+          <button class="btn btn-primary" type="submit">Choose Quarterly</button>
+          <a class="btn" href="/dashboard">View Dashboard</a>
+        </form>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <h3>FAQ</h3>
+      <ul class="feature-list">
+        <li>Can I cancel anytime? Yes — use “Manage billing” in your dashboard.</li>
+        <li>How do I get invoices? Your invoices appear in the dashboard with PDF links.</li>
+        <li>What happens after payment? Features turn on after sign‑in and subscription activation.</li>
+      </ul>
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,243 @@
+---
+import Layout from "../shared/Layout.astro";
+import RenewalCountdown from "../components/RenewalCountdown.astro";
+import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../lib/stripe";
+import { getSupabaseServerClient } from "../lib/supabase";
+
+const supabase = getSupabaseServerClient(Astro);
+const { data } = await supabase.auth.getUser();
+if (!data.user) return Astro.redirect("/auth/signin");
+const userEmail = data.user?.email as string | undefined;
+const userId = data.user?.id as string | undefined;
+
+let sub = { active: false, customerId: undefined, priceId: undefined, periodEnd: undefined } as { active: boolean; customerId?: string; priceId?: string; periodEnd?: string };
+if (userId) {
+  const { data: status } = await supabase
+    .from("subscription_status")
+    .select("active, price_id, current_period_end")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (status) {
+    sub = { active: !!status.active, priceId: status.price_id ?? undefined, periodEnd: status.current_period_end ?? undefined };
+  } else {
+    const { data: map } = await supabase
+      .from("billing_customers")
+      .select("stripe_customer_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (map?.stripe_customer_id) {
+      sub = await findActiveSubscriptionByCustomerId(map.stripe_customer_id);
+    } else if (userEmail) {
+      sub = await findActiveSubscriptionByEmail(userEmail);
+    }
+  }
+}
+let invoices: Array<{ id: string; status: string | null; amount_due: number; currency: string; hosted_invoice_url: string | null; invoice_pdf: string | null; created: number }> = [];
+let nextBilling: string | null = null;
+let planLabel: string | null = null;
+let renewalDays: number | null = null;
+let lastInvoiceAmount: string | null = null;
+let lastInvoiceDate: string | null = null;
+const { data: s } = await supabase.auth.getSession();
+const accessToken = s.session?.access_token;
+const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
+const displayName = (data.user?.user_metadata as any)?.name ?? userEmail ?? "";
+const avatarInitial = (displayName || "U").slice(0, 1).toUpperCase();
+let invoicesCount = 0;
+if (accessToken && base) {
+  const res = await fetch(`${base}/invoices`, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (res.ok) {
+    const j = await res.json() as { invoices: typeof invoices };
+    invoices = j.invoices ?? [];
+  }
+}
+if (invoices.length === 0 && userEmail) {
+  let customerId: string | undefined;
+  if (userId) {
+    const { data: map } = await supabase
+      .from("billing_customers")
+      .select("stripe_customer_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    customerId = map?.stripe_customer_id as string | undefined;
+  }
+  if (!customerId) {
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    customerId = customers.data[0]?.id;
+  }
+  if (customerId) {
+    const list = await stripe.invoices.list({ customer: customerId, limit: 20 });
+    invoices = list.data.map((i) => ({
+      id: i.id,
+      status: (i.status ?? null) as unknown as string | null,
+      amount_due: i.amount_due,
+      currency: i.currency,
+      hosted_invoice_url: i.hosted_invoice_url ?? null,
+      invoice_pdf: i.invoice_pdf ?? null,
+      created: i.created,
+    }));
+  }
+}
+invoicesCount = invoices.length;
+if (invoices.length > 0) {
+  const latest = invoices.reduce((a, b) => (a.created > b.created ? a : b));
+  lastInvoiceAmount = `${(latest.amount_due / 100).toFixed(2)} ${latest.currency.toUpperCase()}`;
+  lastInvoiceDate = new Date(latest.created * 1000).toLocaleDateString();
+}
+if (sub.periodEnd) {
+  try {
+    const dt = new Date(sub.periodEnd);
+    nextBilling = dt.toLocaleDateString();
+    const diffMs = dt.getTime() - Date.now();
+    renewalDays = diffMs > 0 ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : 0;
+  } catch {}
+}
+const monthlyPrice = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
+const yearlyPrice = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
+const quarterlyPrice = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
+const halfyearlyPrice = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
+if (sub.priceId) {
+  if (monthlyPrice && sub.priceId === monthlyPrice) planLabel = "Monthly";
+  else if (yearlyPrice && sub.priceId === yearlyPrice) planLabel = "Annual";
+  else if (quarterlyPrice && sub.priceId === quarterlyPrice) planLabel = "Quarterly";
+  else if (halfyearlyPrice && sub.priceId === halfyearlyPrice) planLabel = "Half‑yearly";
+}
+const urlError = new URL(Astro.request.url).searchParams.get("error");
+let errorBanner: string | null = null;
+if (urlError === "rate_limited") errorBanner = "Too many requests. Try again in a minute.";
+else if (urlError === "rate_limit_error") errorBanner = "Rate limit service error. Please retry.";
+else if (urlError === "misconfigured_edge_function") errorBanner = "Billing service is misconfigured.";
+else if (urlError === "checkout_failed") errorBanner = "Checkout failed. Please try again.";
+else if (urlError === "missing_price_id") errorBanner = "Price configuration missing.";
+---
+<Layout title="Dashboard">
+  <section class="grid" style="max-width:720px;margin:0 auto">
+    <h2 style="text-align:center">Dashboard</h2>
+    {
+      errorBanner ? (
+        <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 12%, transparent)">
+          <strong style="color:#ef4444">Error</strong>
+          <p class="lead" style="margin-top:6px">{errorBanner}</p>
+        </div>
+      ) : null
+    }
+    <div class="card" style="display:flex; align-items:center; gap:16px; justify-content:space-between">
+      <div style="display:flex; align-items:center; gap:12px">
+        <div style="width:48px; height:48px; border-radius:999px; background: color-mix(in oklab, var(--color-primary) 18%, transparent); display:flex; align-items:center; justify-content:center; font-weight:600">
+          {avatarInitial}
+        </div>
+        <div>
+          <div style="font-weight:600">{displayName}</div>
+          <div class="muted" style="font-size:13px">{userEmail}</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+        <span class="badge">{planLabel ?? (sub.active ? "Active" : "No plan")}</span>
+        <span class="muted">Invoices: <strong>{invoicesCount}</strong></span>
+        <span class="muted">Next billing: <strong>{nextBilling ?? "—"}</strong></span>
+      </div>
+    </div>
+    <div class="card" style="display:flex; align-items:center; gap:16px; justify-content:space-between">
+      <div class="muted">Last invoice: <strong>{lastInvoiceAmount ?? "—"}</strong>{lastInvoiceDate ? ` · ${lastInvoiceDate}` : ""}</div>
+      <RenewalCountdown periodEnd={sub.periodEnd ?? ""} />
+      <div class="muted">Total invoices: <strong>{invoicesCount}</strong></div>
+    </div>
+    {
+      userEmail ? (
+        <>
+          <div class="grid">
+            <div class="card">
+              <p class="muted">Signed in as <strong>{userEmail}</strong></p>
+              {
+                sub.active ? (
+                  <>
+                    <p><span class="status-dot"></span><strong>Active subscription</strong></p>
+                    {
+                      planLabel ? (<p class="muted">Plan: <strong>{planLabel}</strong></p>) : null
+                    }
+                    {
+                      nextBilling ? (<p class="muted">Next billing: <strong>{nextBilling}</strong></p>) : null
+                    }
+                    <div class="hero-actions" style="margin-top:16px">
+                      <a class="btn" href="/auth/signout">Sign out</a>
+                      <a class="btn btn-primary" href="/api/portal">Manage billing</a>
+                    </div>
+                    <div class="hero-actions" style="margin-top:12px">
+                      <form action="/api/cancel" method="POST" style="display:inline-block; margin-right:12px">
+                        <input type="hidden" name="at_period_end" value="true" />
+                        <button class="btn" type="submit">Cancel at period end</button>
+                      </form>
+                      <form action="/api/cancel" method="POST" style="display:inline-block; margin-right:12px">
+                        <input type="hidden" name="at_period_end" value="false" />
+                        <button class="btn" type="submit">Cancel now</button>
+                      </form>
+                      <form action="/api/reactivate" method="POST" style="display:inline-block">
+                        <button class="btn" type="submit">Reactivate</button>
+                      </form>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p><span class="status-dot inactive"></span><strong>No active subscription</strong></p>
+                    <p class="muted">Choose a plan to get started.</p>
+                    <div class="hero-actions" style="margin-top:12px">
+                      <form action="/api/checkout" method="POST" style="display:inline-block">
+                        <input type="hidden" name="plan" value="monthly" />
+                        <button class="btn btn-primary" type="submit">Choose Monthly</button>
+                      </form>
+                      <form action="/api/checkout" method="POST" style="display:inline-block">
+                        <input type="hidden" name="plan" value="annual" />
+                        <button class="btn" type="submit">Choose Annual</button>
+                      </form>
+                      <form action="/api/checkout" method="POST" style="display:inline-block">
+                        <input type="hidden" name="plan" value="quarterly" />
+                        <button class="btn" type="submit">Choose Quarterly</button>
+                      </form>
+                      <form action="/api/checkout" method="POST" style="display:inline-block">
+                        <input type="hidden" name="plan" value="halfyearly" />
+                        <button class="btn" type="submit">Choose Half‑yearly</button>
+                      </form>
+                      <a class="btn" href="/pricing">View pricing</a>
+                    </div>
+                  </>
+                )
+              }
+            </div>
+            <div class="card">
+              <h3>Invoices</h3>
+              {
+                invoices.length > 0 ? (
+                  <ul class="table">
+                    {
+                      invoices.map((i) => (
+                        <li>
+                          <span>#{i.id} · {(i.amount_due / 100).toFixed(2)} {i.currency.toUpperCase()} · {new Date(i.created * 1000).toLocaleDateString()}</span>
+                          <span>
+                            {
+                              i.invoice_pdf ? (
+                                <a class="btn" style="margin-left:8px" href={i.invoice_pdf} target="_blank" rel="noreferrer">PDF</a>
+                              ) : i.hosted_invoice_url ? (
+                                <a class="btn" style="margin-left:8px" href={i.hosted_invoice_url} target="_blank" rel="noreferrer">View</a>
+                              ) : null
+                            }
+                          </span>
+                        </li>
+                      ))
+                    }
+                  </ul>
+                ) : (
+                  <p class="muted">No invoices yet.</p>
+                )
+              }
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <p>You need to sign in to access the dashboard.</p>
+          <a class="btn btn-primary" href="/auth/signin">Sign In</a>
+        </>
+      )
+    }
+  </section>
+</Layout>

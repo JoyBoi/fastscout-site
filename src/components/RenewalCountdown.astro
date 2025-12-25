@@ -1,0 +1,70 @@
+---
+const { periodEnd } = Astro.props as { periodEnd?: string };
+const iso = periodEnd ?? "";
+let label = "—";
+if (iso) {
+  try {
+    const target = new Date(iso).getTime();
+    const totalSeconds = Math.max(0, Math.floor((target - Date.now()) / 1000));
+    const days = Math.floor(totalSeconds / (60 * 60 * 24));
+    const rem = totalSeconds - days * 24 * 60 * 60;
+    const hours = Math.floor(rem / 3600);
+    const minutes = Math.floor((rem % 3600) / 60);
+    const seconds = rem % 60;
+    const h = String(hours).padStart(2, "0");
+    const m = String(minutes).padStart(2, "0");
+    const s = String(seconds).padStart(2, "0");
+    const dLabel = `${days} day${days === 1 ? "" : "s"}`;
+    label = `${dLabel} ${h}:${m}:${s}`;
+  } catch {}
+}
+---
+<div class="muted">Renewal: <strong id="renewal-countdown" data-period-end={iso}>{label}</strong></div>
+<script is:inline>
+  (() => {
+    const el = document.getElementById("renewal-countdown");
+    if (!el) return;
+    const iso = el.dataset.periodEnd;
+    if (!iso) return;
+    const target = new Date(iso).getTime();
+    let timerId;
+    function upd() {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        el.textContent = "0 days 00:00:00";
+        return;
+      }
+      const totalSeconds = Math.floor(diff / 1000);
+      const days = Math.floor(totalSeconds / (60 * 60 * 24));
+      const rem = totalSeconds - days * 24 * 60 * 60;
+      const hours = Math.floor(rem / 3600);
+      const minutes = Math.floor((rem % 3600) / 60);
+      const seconds = rem % 60;
+      const h = String(hours).padStart(2, "0");
+      const m = String(minutes).padStart(2, "0");
+      const s = String(seconds).padStart(2, "0");
+      const dLabel = `${days} day${days === 1 ? "" : "s"}`;
+      el.textContent = `${dLabel} ${h}:${m}:${s}`;
+    }
+    function start() {
+      if (timerId) clearInterval(timerId);
+      timerId = setInterval(upd, 1000);
+    }
+    function stop() {
+      if (timerId) { clearInterval(timerId); timerId = undefined; }
+    }
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) {
+        el.setAttribute("title", `Local time (${tz})`);
+        el.setAttribute("aria-label", `Renewal countdown in local time (${tz})`);
+      }
+    } catch {}
+    upd();
+    start();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") stop();
+      else { upd(); start(); }
+    });
+  })();
+  </script>

@@ -1,0 +1,74 @@
+---
+import Layout from "../../shared/Layout.astro";
+const qs = new URL(Astro.request.url).searchParams;
+const error = qs.get("error");
+const message = qs.get("message");
+const mode = qs.get("mode") === "signup" ? "signup" : "signin";
+const isSignup = mode === "signup";
+---
+<Layout title="Sign in to FastScout">
+  <section class="grid fade-in" style="max-width:720px; margin:0 auto">
+    <h2 style="text-align:center">Welcome</h2>
+    { error ? (
+      <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 12%, transparent)">
+        <strong style="color:#ef4444">Error</strong>
+        <p class="lead" style="margin-top:6px">{error}</p>
+      </div>
+    ) : null }
+    {
+      message ? (
+      <div class="card" style="border-color:#22c55e;background: color-mix(in oklab, #22c55e 12%, transparent)">
+        <strong style="color:#22c55e">Notice</strong>
+        <p class="lead" style="margin-top:6px">{message}</p>
+      </div>
+      ) : null
+    }
+
+    <div class="card" style="max-width:480px; margin:0 auto">
+      <h3 style="margin-top:0">{isSignup ? "Create account" : "Sign in"}</h3>
+      <form action={isSignup ? "/auth/email-signup" : "/auth/email-signin"} method="POST" style="display:grid; gap:12px">
+        <label>
+          <div class="muted" style="margin-bottom:4px">Email</div>
+          <input
+            name="email"
+            type="email"
+            required
+            style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--color-border); background: color-mix(in oklab, var(--color-bg) 92%, #fff)"
+          />
+        </label>
+        <label>
+          <div class="muted" style="margin-bottom:4px">Password</div>
+          <input
+            name="password"
+            type="password"
+            minlength="6"
+            required
+            style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--color-border); background: color-mix(in oklab, var(--color-bg) 92%, #fff)"
+          />
+        </label>
+        <button class="btn btn-primary" type="submit">{isSignup ? "Sign up" : "Sign in"}</button>
+      </form>
+      <div class="hero-actions" style="margin-top:12px">
+        <a href="/auth/oauth/github" class="btn btn-outline">{isSignup ? "Sign up with GitHub" : "Continue with GitHub"}</a>
+        <a href="/auth/oauth/google" class="btn btn-outline">{isSignup ? "Sign up with Google" : "Continue with Google"}</a>
+      </div>
+      <p class="muted" style="margin-top:16px; font-size:14px">
+        {
+          isSignup ? (
+            <>
+              Already have an account?
+              {" "}
+              <a href="/auth?mode=signin">Sign in</a>
+            </>
+          ) : (
+            <>
+              Don&apos;t have an account?
+              {" "}
+              <a href="/auth?mode=signup">Create one</a>
+            </>
+          )
+        }
+      </p>
+    </div>
+  </section>
+</Layout>

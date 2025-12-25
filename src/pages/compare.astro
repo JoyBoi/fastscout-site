@@ -1,0 +1,56 @@
+---
+import Layout from "../shared/Layout.astro";
+---
+<Layout title="Design Compare">
+  <section class="grid grid-2">
+    <div>
+      <h2>Before</h2>
+      <div style="border:1px solid #e5e7eb; border-radius:12px; padding:16px">
+        <div style="max-width: 720px; margin: 24px auto; text-align: center">
+          <img src="/logo.png" alt="FastScout" style="width: 96px; height: 96px" />
+          <h3>FastScout Bridge</h3>
+          <p>The companion website for the FastScout browser extension.</p>
+          <div style="display:flex; gap:12px; justify-content:center; margin-top:24px">
+            <a href="/pricing" style="display:inline-block; padding:10px 14px; border-radius:8px; border:1px solid #888; text-decoration:none">View Pricing</a>
+            <a href="/auth/signin" style="display:inline-block; padding:10px 14px; border-radius:8px; border:1px solid #888; text-decoration:none; background:#3b82f6; color:white; border-color:#3b82f6">Sign In</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h2>After</h2>
+      <div class="card">
+        <section class="grid grid-2" style="align-items:center">
+          <div>
+            <img src="/logo.png" alt="FastScout" style="width: 96px; height: 96px" />
+            <div class="hero">
+              <h3>Surf faster, work smarter.</h3>
+              <p class="lead">Polished hierarchy, accessible components, and responsive layout.</p>
+              <div class="hero-actions">
+                <a href="/pricing" class="btn btn-primary">Get Started</a>
+                <a href="/auth/signin" class="btn btn-outline">Sign In</a>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-2">
+            <div class="card feature">
+              <div class="icon"></div>
+              <div>
+                <h4>Structured grid</h4>
+                <p class="lead">Consistent spacing and clear content groups.</p>
+              </div>
+            </div>
+            <div class="card feature">
+              <div class="icon"></div>
+              <div>
+                <h4>Accessible focus</h4>
+                <p class="lead">WCAG‑friendly states on interactive elements.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+</Layout>
+
