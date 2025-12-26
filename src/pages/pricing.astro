@@ -1,6 +1,7 @@
 ---
 import Layout from "../shared/Layout.astro";
-import stripe from "../lib/stripe";
+import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../lib/stripe";
+import { getSupabaseServerClient } from "../lib/supabase";
 
 let monthlyId = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
 const yearlyId = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
@@ -8,6 +9,40 @@ const quarterlyId = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefi
 const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
 const fallbackId = import.meta.env.STRIPE_PRICE_ID as string | undefined;
 if (!monthlyId && fallbackId) monthlyId = fallbackId;
+const supabase = getSupabaseServerClient(Astro);
+const { data: userData } = await supabase.auth.getUser();
+const userId = userData.user?.id as string | undefined;
+const userEmail = userData.user?.email as string | undefined;
+let subActive = false;
+let subPriceId: string | undefined;
+if (userId) {
+  const { data: status } = await supabase
+    .from("subscription_status")
+    .select("active, price_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (status) {
+    subActive = !!status.active;
+    subPriceId = status.price_id ?? undefined;
+  }
+}
+if (!subActive && userEmail && userId) {
+  const { data: map } = await supabase
+    .from("billing_customers")
+    .select("stripe_customer_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const customerId = map?.stripe_customer_id as string | undefined;
+  if (customerId) {
+    const res = await findActiveSubscriptionByCustomerId(customerId);
+    subActive = res.active;
+    subPriceId = subPriceId ?? res.priceId;
+  } else {
+    const res = await findActiveSubscriptionByEmail(userEmail);
+    subActive = res.active;
+    subPriceId = subPriceId ?? res.priceId;
+  }
+}
 let monthlyAmount = 500;
 let yearlyAmount = 5000;
 let quarterlyAmount = 1400;
@@ -64,11 +99,29 @@ const halfyearlyDisplay = `$${(halfyearlyAmount / 100).toFixed(0)}/6 months`;
           <li>Extension token</li>
           <li>Email support</li>
         </ul>
-        <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Monthly">
-          <input type="hidden" name="plan" value="monthly" />
-          <button class="btn btn-primary" type="submit">Choose Monthly</button>
-          <a class="btn" href="/dashboard">View Dashboard</a>
-        </form>
+        {
+          subActive ? (
+            subPriceId === monthlyId ? (
+              <div class="hero-actions" aria-label="Current Monthly">
+                <button class="btn btn-primary" type="button" disabled>Current Plan</button>
+                <a class="btn" href="/dashboard">View Dashboard</a>
+              </div>
+            ) : (
+              <form action="/api/change-plan" method="POST" class="hero-actions" aria-label="Switch to Monthly">
+                <input type="hidden" name="plan" value="monthly" />
+                <button class="btn btn-primary" type="submit">Switch to Monthly</button>
+                <a class="btn" href="/dashboard">View Dashboard</a>
+              </form>
+              <div class="muted" style="margin-top:6px">Applies next cycle</div>
+            )
+          ) : (
+            <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Monthly">
+              <input type="hidden" name="plan" value="monthly" />
+              <button class="btn btn-primary" type="submit">Choose Monthly</button>
+              <a class="btn" href="/dashboard">View Dashboard</a>
+            </form>
+          )
+        }
       </div>
       <div class="card plan plan--featured">
         <div class="badge">Best value</div>
@@ -79,11 +132,29 @@ const halfyearlyDisplay = `$${(halfyearlyAmount / 100).toFixed(0)}/6 months`;
           <li>Extension token</li>
           <li>Priority support</li>
         </ul>
-        <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Annual">
-          <input type="hidden" name="plan" value="annual" />
-          <button class="btn btn-primary" type="submit">Choose Annual</button>
-          <a class="btn" href="/dashboard">View Dashboard</a>
-        </form>
+        {
+          subActive ? (
+            subPriceId === yearlyId ? (
+              <div class="hero-actions" aria-label="Current Annual">
+                <button class="btn btn-primary" type="button" disabled>Current Plan</button>
+                <a class="btn" href="/dashboard">View Dashboard</a>
+              </div>
+            ) : (
+              <form action="/api/change-plan" method="POST" class="hero-actions" aria-label="Switch to Annual">
+                <input type="hidden" name="plan" value="annual" />
+                <button class="btn btn-primary" type="submit">Switch to Annual</button>
+                <a class="btn" href="/dashboard">View Dashboard</a>
+              </form>
+              <div class="muted" style="margin-top:6px">Applies next cycle</div>
+            )
+          ) : (
+            <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Annual">
+              <input type="hidden" name="plan" value="annual" />
+              <button class="btn btn-primary" type="submit">Choose Annual</button>
+              <a class="btn" href="/dashboard">View Dashboard</a>
+            </form>
+          )
+        }
       </div>
       <div class="card plan">
         <h3>Half‑yearly</h3>
@@ -93,11 +164,29 @@ const halfyearlyDisplay = `$${(halfyearlyAmount / 100).toFixed(0)}/6 months`;
           <li>Extension token</li>
           <li>Email support</li>
         </ul>
-        <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Half-yearly">
-          <input type="hidden" name="plan" value="halfyearly" />
-          <button class="btn btn-primary" type="submit">Choose Half‑yearly</button>
-          <a class="btn" href="/dashboard">View Dashboard</a>
-        </form>
+        {
+          subActive ? (
+            subPriceId === halfyearlyId ? (
+              <div class="hero-actions" aria-label="Current Half-yearly">
+                <button class="btn btn-primary" type="button" disabled>Current Plan</button>
+                <a class="btn" href="/dashboard">View Dashboard</a>
+              </div>
+            ) : (
+              <form action="/api/change-plan" method="POST" class="hero-actions" aria-label="Switch to Half-yearly">
+                <input type="hidden" name="plan" value="halfyearly" />
+                <button class="btn btn-primary" type="submit">Switch to Half‑yearly</button>
+                <a class="btn" href="/dashboard">View Dashboard</a>
+              </form>
+              <div class="muted" style="margin-top:6px">Applies next cycle</div>
+            )
+          ) : (
+            <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Half-yearly">
+              <input type="hidden" name="plan" value="halfyearly" />
+              <button class="btn btn-primary" type="submit">Choose Half‑yearly</button>
+              <a class="btn" href="/dashboard">View Dashboard</a>
+            </form>
+          )
+        }
       </div>
       <div class="card plan">
         <h3>Quarterly</h3>
@@ -107,11 +196,29 @@ const halfyearlyDisplay = `$${(halfyearlyAmount / 100).toFixed(0)}/6 months`;
           <li>Extension token</li>
           <li>Email support</li>
         </ul>
-        <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Quarterly">
-          <input type="hidden" name="plan" value="quarterly" />
-          <button class="btn btn-primary" type="submit">Choose Quarterly</button>
-          <a class="btn" href="/dashboard">View Dashboard</a>
-        </form>
+        {
+          subActive ? (
+            subPriceId === quarterlyId ? (
+              <div class="hero-actions" aria-label="Current Quarterly">
+                <button class="btn btn-primary" type="button" disabled>Current Plan</button>
+                <a class="btn" href="/dashboard">View Dashboard</a>
+              </div>
+            ) : (
+              <form action="/api/change-plan" method="POST" class="hero-actions" aria-label="Switch to Quarterly">
+                <input type="hidden" name="plan" value="quarterly" />
+                <button class="btn btn-primary" type="submit">Switch to Quarterly</button>
+                <a class="btn" href="/dashboard">View Dashboard</a>
+              </form>
+              <div class="muted" style="margin-top:6px">Applies next cycle</div>
+            )
+          ) : (
+            <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Quarterly">
+              <input type="hidden" name="plan" value="quarterly" />
+              <button class="btn btn-primary" type="submit">Choose Quarterly</button>
+              <a class="btn" href="/dashboard">View Dashboard</a>
+            </form>
+          )
+        }
       </div>
     </div>
     <div class="card" style="margin-top:24px">

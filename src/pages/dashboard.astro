@@ -103,12 +103,15 @@ if (sub.priceId) {
   else if (halfyearlyPrice && sub.priceId === halfyearlyPrice) planLabel = "Half‑yearly";
 }
 const urlError = new URL(Astro.request.url).searchParams.get("error");
+const urlSuccess = new URL(Astro.request.url).searchParams.get("success");
 let errorBanner: string | null = null;
+let successBanner: string | null = null;
 if (urlError === "rate_limited") errorBanner = "Too many requests. Try again in a minute.";
 else if (urlError === "rate_limit_error") errorBanner = "Rate limit service error. Please retry.";
 else if (urlError === "misconfigured_edge_function") errorBanner = "Billing service is misconfigured.";
 else if (urlError === "checkout_failed") errorBanner = "Checkout failed. Please try again.";
 else if (urlError === "missing_price_id") errorBanner = "Price configuration missing.";
+if (urlSuccess === "plan_change_scheduled") successBanner = "Plan change scheduled. It will apply next cycle.";
 ---
 <Layout title="Dashboard">
   <section class="grid" style="max-width:720px;margin:0 auto">
@@ -118,6 +121,14 @@ else if (urlError === "missing_price_id") errorBanner = "Price configuration mis
         <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 12%, transparent)">
           <strong style="color:#ef4444">Error</strong>
           <p class="lead" style="margin-top:6px">{errorBanner}</p>
+        </div>
+      ) : null
+    }
+    {
+      successBanner ? (
+        <div class="card" style="border-color:#16a34a;background: color-mix(in oklab, #16a34a 12%, transparent)">
+          <strong style="color:#16a34a">Success</strong>
+          <p class="lead" style="margin-top:6px">{successBanner}</p>
         </div>
       ) : null
     }

@@ -15,5 +15,8 @@
     "astro": "^5.16.6",
     "jsonwebtoken": "^9.0.2",
     "stripe": "^15.8.0"
+  },
+  "devDependencies": {
+    "@astrojs/vercel": "^9.0.2"
   }
 }
