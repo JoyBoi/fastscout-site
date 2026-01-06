@@ -1,10 +1,17 @@
 ---
 import Layout from "../../shared/Layout.astro";
+import { getSupabaseServerClient } from "../../lib/supabase";
 const qs = new URL(Astro.request.url).searchParams;
 const error = qs.get("error");
 const message = qs.get("message");
 const mode = qs.get("mode") === "signup" ? "signup" : "signin";
 const isSignup = mode === "signup";
+const supabase = getSupabaseServerClient(Astro);
+const { data } = await supabase.auth.getUser();
+if (data.user) {
+  const siteUrl = import.meta.env.SITE_URL as string;
+  return Astro.redirect(`${siteUrl}/dashboard`);
+}
 ---
 <Layout title="Sign in to FastScout">
   <section class="grid fade-in" style="max-width:720px; margin:0 auto">
