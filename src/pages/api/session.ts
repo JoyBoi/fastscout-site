@@ -10,12 +10,13 @@ export const GET: APIRoute = async (ctx) => {
   const { data } = await supabase.auth.getUser();
   const user = data.user;
   if (!user) {
-    return new Response(JSON.stringify({ authenticated: false, subscriptionActive: false }), {
+    return new Response(JSON.stringify({ authenticated: false, subscriptionActive: false, email: null, displayName: null }), {
       status: 200,
       headers: { "content-type": "application/json", ...corsHeaders(ctx.request) },
     });
   }
   const email = user.email as string | undefined;
+  const displayName = ((user as any)?.user_metadata?.name as string | undefined) ?? email ?? null;
   const userId = user.id as string;
   let subscriptionActive = false;
   let priceId: string | undefined;
@@ -49,7 +50,7 @@ export const GET: APIRoute = async (ctx) => {
       periodEnd = periodEnd ?? res.periodEnd;
     }
   }
-  return new Response(JSON.stringify({ authenticated: true, subscriptionActive, priceId, periodEnd }), {
+  return new Response(JSON.stringify({ authenticated: true, subscriptionActive, priceId, periodEnd, email, displayName }), {
     status: 200,
     headers: { "content-type": "application/json", ...corsHeaders(ctx.request) },
   });
@@ -60,4 +61,3 @@ export const OPTIONS: APIRoute = async (ctx) => {
   if (pf) return pf;
   return new Response(null, { status: 204, headers: { ...corsHeaders(ctx.request) } });
 };
-
