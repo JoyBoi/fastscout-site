@@ -18,8 +18,8 @@ export const POST: APIRoute = async (ctx) => {
     max_count: 10,
     window_seconds: 300,
   });
-  if (rlError) return new Response(JSON.stringify({ error: "rate_limit_error" }), { status: 500, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
-  if (!allowed) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+  const proceed = rlError ? true : !!allowed;
+  if (!proceed) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 
   let customerId: string | undefined;
   const { data: status } = await supabase
