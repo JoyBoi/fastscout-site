@@ -21,7 +21,8 @@ export function getSupabaseServerClient(Astro: AstroGlobal | { request: Request;
           const host = u.hostname;
           const isLocal = host === "localhost" || host.endsWith(".localhost");
           if (!isLocal) {
-            domain = host;
+            const parts = host.split(".");
+            domain = parts.length >= 2 ? `.${parts.slice(-2).join(".")}` : `.${host}`;
           } else {
             domain = undefined;
           }

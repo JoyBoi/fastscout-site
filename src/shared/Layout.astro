@@ -180,29 +180,7 @@ const signedIn = !!data.user;
         .btn { transition: none; }
       }
     </style>
-    <script is:inline>
-      document.addEventListener("DOMContentLoaded", function () {
-        ["header", "main"].forEach(function (s) {
-          var el = document.querySelector(s);
-          if (el && el.getAttribute("aria-hidden") === "true") el.removeAttribute("aria-hidden");
-        });
-        var mo = new MutationObserver(function (ms) {
-          for (var i = 0; i < ms.length; i++) {
-            var m = ms[i];
-            if (m.type === "attributes" && m.attributeName === "aria-hidden") {
-              var t = m.target;
-              if (t && t.matches && (t.matches("header") || t.matches("main")) && t.getAttribute("aria-hidden") === "true") {
-                t.removeAttribute("aria-hidden");
-              }
-            }
-          }
-        });
-        ["header", "main"].forEach(function (s) {
-          var el = document.querySelector(s);
-          if (el) mo.observe(el, { attributes: true, attributeFilter: ["aria-hidden"] });
-        });
-      });
-    </script>
+    <script src="https://js.stripe.com/v3" async></script>
   </head>
   <body>
     <header>
@@ -218,7 +196,7 @@ const signedIn = !!data.user;
         }
       </nav>
     </header>
-    <main class="container section" role="main">
+    <main class="container section">
       <slot />
     </main>
   </body>

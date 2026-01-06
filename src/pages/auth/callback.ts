@@ -12,7 +12,7 @@ export const GET: APIRoute = async (ctx) => {
     const u = new URL(siteUrl);
     const host = u.hostname;
     const isLocal = host === "localhost" || host.endsWith(".localhost");
-    const domain = isLocal ? undefined : host;
+    const domain = isLocal ? undefined : `.${host}`;
     const secure = u.protocol === "https:";
     const sameSite = secure ? "none" : "lax";
     ctx.cookies.set("fs_session", "1", {
