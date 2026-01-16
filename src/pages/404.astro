@@ -1,0 +1,16 @@
+---
+import Layout from "../shared/Layout.astro";
+---
+
+<Layout title="Page Not Found - FastScout">
+  <div class="glow-orb" style="top: 50%; left: 50%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%); filter: blur(60px); position: absolute; transform: translate(-50%, -50%); z-index: -1;"></div>
+
+  <section class="container section" style="height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+    <h1 style="font-size: clamp(64px, 8vw, 120px); font-weight: 800; line-height: 1; margin-bottom: 24px; color: var(--color-text-muted); opacity: 0.2;">404</h1>
+    <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 16px;">Page not found</h2>
+    <p class="lead" style="margin-bottom: 40px; max-width: 400px;">
+        Sorry, we couldn't find the page you're looking for. It might have been moved or doesn't exist.
+    </p>
+    <a href="/" class="btn btn-primary">Back to Home</a>
+  </section>
+</Layout>

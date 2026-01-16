@@ -1,0 +1,57 @@
+---
+import Layout from "../shared/Layout.astro";
+---
+
+<Layout title="Documentation - FastScout">
+  <section class="container section" style="padding-top: 30px;">
+    <div style="text-align: center; margin-bottom: 60px;">
+      <h1 style="font-size: clamp(32px, 4vw, 48px); font-weight: 800; margin-bottom: 16px;">Documentation</h1>
+      <p class="lead" style="max-width: 600px; margin: 0 auto;">Everything you need to know about using FastScout.</p>
+    </div>
+
+    <div class="grid grid-3">
+      <!-- Getting Started -->
+      <div class="card">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 16px;">Getting Started</h3>
+        <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+          <li><a href="#" class="ref-link">Installation Guide</a></li>
+          <li><a href="#" class="ref-link">Creating your Account</a></li>
+          <li><a href="#" class="ref-link">Setting up the Extension</a></li>
+        </ul>
+      </div>
+
+      <!-- Features -->
+      <div class="card">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 16px;">Features</h3>
+        <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+          <li><a href="#" class="ref-link">Using Quick Bids</a></li>
+          <li><a href="#" class="ref-link">Managing Invoices</a></li>
+          <li><a href="#" class="ref-link">Understanding Metrics</a></li>
+        </ul>
+      </div>
+
+      <!-- Billing -->
+      <div class="card">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 16px;">Billing</a></h3>
+        <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+           <li><a href="#" class="ref-link">Plans & Pricing</a></li>
+           <li><a href="#" class="ref-link">Managing Subscription</a></li>
+           <li><a href="#" class="ref-link">Refund Policy</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .ref-link {
+        color: var(--color-primary);
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ref-link:hover {
+        text-decoration: underline;
+    }
+  </style>
+</Layout>

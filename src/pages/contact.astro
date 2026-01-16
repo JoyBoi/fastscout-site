@@ -1,0 +1,42 @@
+---
+import Layout from "../shared/Layout.astro";
+---
+
+<Layout title="Contact Support - FastScout">
+  <section class="container section" style="max-width: 600px; padding-top: 30px;">
+    <div style="text-align: center; margin-bottom: 40px;">
+        <h1 style="font-size: clamp(32px, 4vw, 48px); font-weight: 800; margin-bottom: 16px;">Contact Support</h1>
+        <p class="lead">We're here to help. Reach out to us for any questions or issues.</p>
+    </div>
+
+    <div class="card">
+        <form style="display: flex; flex-direction: column; gap: 24px;">
+            <label>
+                <span class="muted" style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600;">Email Address</span>
+                <input type="email" placeholder="you@company.com" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg);" />
+            </label>
+            
+            <label>
+                <span class="muted" style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600;">Subject</span>
+                 <select style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg);">
+                    <option>General Inquiry</option>
+                    <option>Technical Support</option>
+                    <option>Billing Question</option>
+                    <option>Feature Request</option>
+                 </select>
+            </label>
+
+            <label>
+                 <span class="muted" style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600;">Message</span>
+                 <textarea rows="5" placeholder="How can we help?" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg); font-family: inherit; resize: vertical;"></textarea>
+            </label>
+
+            <button class="btn btn-primary" style="width: 100%; justify-content: center;">Send Message</button>
+        </form>
+
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--color-border); text-align: center;">
+            <p class="muted" style="font-size: 14px;">Or email us directly at <a href="mailto:support@fastscout.app" style="color: var(--color-primary); font-weight: 600;">support@fastscout.app</a></p>
+        </div>
+    </div>
+  </section>
+</Layout>
