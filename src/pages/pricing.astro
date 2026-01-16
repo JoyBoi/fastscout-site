@@ -13,6 +13,12 @@ const supabase = getSupabaseServerClient(Astro);
 const { data: userData } = await supabase.auth.getUser();
 const userId = userData.user?.id as string | undefined;
 const userEmail = userData.user?.email as string | undefined;
+const urlError = new URL(Astro.request.url).searchParams.get("error");
+let errorBanner: string | null = null;
+if (urlError === "rate_limited") errorBanner = "Too many requests. Try again in a minute.";
+else if (urlError === "checkout_failed") errorBanner = "Checkout failed. Please try again.";
+else if (urlError === "missing_price_id") errorBanner = "Price configuration missing.";
+else if (urlError === "already_subscribed") errorBanner = "You already have an active subscription.";
 let subActive = false;
 let subPriceId: string | undefined;
 if (userId) {
@@ -90,6 +96,21 @@ const halfyearlyDisplay = `$${(halfyearlyAmount / 100).toFixed(0)}/6 months`;
       .plan .hero-actions .btn { flex: 1 1 0; min-width: 160px; text-align: center; }
       @media (max-width: 960px) { .pricing-grid { grid-template-columns: 1fr; } }
     </style>
+    {
+      errorBanner ? (
+        <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 12%, transparent); margin-top:16px">
+          <strong style="color:#ef4444">Error</strong>
+          <p class="lead" style="margin-top:6px">{errorBanner}</p>
+          {
+            urlError === "already_subscribed" ? (
+              <div style="margin-top:10px">
+                <a class="btn" href="/dashboard">Go to dashboard</a>
+              </div>
+            ) : null
+          }
+        </div>
+      ) : null
+    }
     <div class="pricing-grid" style="margin-top:16px">
       <div class="card plan">
         <h3>Monthly</h3>

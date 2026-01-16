@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { getSupabaseServerClient } from "../../lib/supabase";
-import stripe from "../../lib/stripe";
+import stripe, { findActiveSubscriptionByEmail } from "../../lib/stripe";
 import { preflight, corsHeaders } from "../../lib/cors";
 
 export const POST: APIRoute = async (ctx) => {
@@ -30,12 +30,10 @@ export const POST: APIRoute = async (ctx) => {
     max_count: 3,
     window_seconds: 60,
   });
+  const siteUrl = import.meta.env.SITE_URL as string;
   if (!rlError && !allowed) {
-    const siteUrl = import.meta.env.SITE_URL as string;
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
-
-  const siteUrl = import.meta.env.SITE_URL as string;
   const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
   if (base && /^https?:\/\/.*/.test(base)) {
     const res = await fetch(`${base}/create-checkout-session`, {
@@ -52,6 +50,10 @@ export const POST: APIRoute = async (ctx) => {
   const { data: user } = await supabase.auth.getUser();
   const email = user.user?.email;
   if (!email) return new Response(null, { status: 302, headers: { Location: "/auth", ...corsHeaders(ctx.request) } as Record<string, string> });
+  const existing = await findActiveSubscriptionByEmail(email);
+  if (existing.active) {
+    return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=already_subscribed`, ...corsHeaders(ctx.request) } as Record<string, string> });
+  }
   if (!priceId) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=missing_price_id`, ...corsHeaders(ctx.request) } as Record<string, string> });
   try {
     const sessionStripe = await stripe.checkout.sessions.create({
