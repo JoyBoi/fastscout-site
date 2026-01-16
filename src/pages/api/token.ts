@@ -18,7 +18,8 @@ export const POST: APIRoute = async (ctx) => {
     max_count: 10,
     window_seconds: 300,
   });
-  const proceed = rlError ? true : !!allowed;
+  // Fail closed: deny on rate limit error (don't allow if RPC fails)
+  const proceed = rlError ? false : !!allowed;
   if (!proceed) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 
   let customerId: string | undefined;
@@ -47,7 +48,8 @@ export const POST: APIRoute = async (ctx) => {
   };
 
   const jwtSecret = import.meta.env.JWT_SECRET as string | undefined;
-  if (!jwtSecret || jwtSecret.length < 16) return new Response(JSON.stringify({ error: "misconfigured_jwt" }), { status: 500, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+  // Require minimum 32 characters for adequate security
+  if (!jwtSecret || jwtSecret.length < 32) return new Response(JSON.stringify({ error: "misconfigured_jwt" }), { status: 500, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
   const extensionToken = jwt.sign(payload, jwtSecret, { expiresIn: "7d" });
   return new Response(JSON.stringify({ token: extensionToken }), { status: 200, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 };

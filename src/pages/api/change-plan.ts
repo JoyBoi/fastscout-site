@@ -16,7 +16,8 @@ export const POST: APIRoute = async (ctx) => {
     window_seconds: 300,
   });
   const siteUrl = import.meta.env.SITE_URL as string;
-  const proceed = rlError ? true : !!allowed;
+  // Fail closed: deny on rate limit error (don't allow if RPC fails)
+  const proceed = rlError ? false : !!allowed;
   if (!proceed) {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
@@ -47,22 +48,18 @@ export const POST: APIRoute = async (ctx) => {
   }
   const monthly = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
   const yearly = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
-  const quarterly = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
-  const halfyearly = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
   const fallback = import.meta.env.STRIPE_PRICE_ID as string | undefined;
   let targetPriceId: string | undefined;
   if (typeof body.price_id === "string" && body.price_id.length > 0) targetPriceId = body.price_id;
   else if (body.plan === "monthly") targetPriceId = monthly ?? fallback;
   else if (body.plan === "annual") targetPriceId = yearly ?? fallback;
-  else if (body.plan === "quarterly") targetPriceId = quarterly ?? fallback;
-  else if (body.plan === "halfyearly") targetPriceId = halfyearly ?? fallback;
   else targetPriceId = fallback;
   if (!targetPriceId) {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=missing_price_id`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
-  const { data: userData } = await supabase.auth.getUser();
-  const email = userData.user?.email;
-  const userId = userData.user?.id;
+  // Use session.user instead of separate getUser() call
+  const email = session.user?.email;
+  const userId = session.user?.id;
   if (!email || !userId) {
     return new Response("Unauthorized", { status: 401, headers: { ...corsHeaders(ctx.request) } });
   }
@@ -81,8 +78,14 @@ export const POST: APIRoute = async (ctx) => {
     const created = await stripe.customers.create({ email });
     customerId = created.id;
   }
-  const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
-  const sub = subs.data[0];
+
+  // Fetch subscriptions and schedules in parallel
+  const [subsResult, schedulesResult] = await Promise.all([
+    stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 }),
+    stripe.subscriptionSchedules.list({ customer: customerId, limit: 20 })
+  ]);
+
+  const sub = subsResult.data[0];
   if (!sub) {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=no_active_subscription`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
@@ -91,8 +94,7 @@ export const POST: APIRoute = async (ctx) => {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?success=plan_unchanged`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
   const currentPeriodEnd = sub.current_period_end;
-  const schedulesPage = await stripe.subscriptionSchedules.list({ customer: customerId, limit: 20 });
-  let schedule = schedulesPage.data.find((s) => s.subscription === sub.id);
+  let schedule = schedulesResult.data.find((s) => s.subscription === sub.id);
   if (!schedule) {
     schedule = await stripe.subscriptionSchedules.create({
       from_subscription: sub.id,

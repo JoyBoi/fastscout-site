@@ -1,4 +1,5 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
 import { getSupabaseServerClient } from "../lib/supabase";
 const { title = "FastScout" } = Astro.props as { title?: string };
 const supabase = getSupabaseServerClient(Astro);
@@ -11,180 +12,257 @@ const signedIn = !!data.user;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <link rel="icon" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <ViewTransitions />
     <style is:inline>
       :root {
-        color-scheme: light dark;
-        --color-bg: #ffffff;
+        color-scheme: light;
+        /* Core Colors - Light Mode */
+        --color-bg: #ffffff; 
+        --color-bg-card: #f8fafc;
         --color-text: #0f172a;
-        --color-muted: #6b7280;
-        --color-primary: #3b82f6;
-        --color-primary-600: #2563eb;
-        --color-border: #e5e7eb;
-        --radius: 12px;
-        --shadow: 0 6px 18px rgba(17, 24, 39, 0.08);
+        --color-text-muted: #64748b;
+        
+        /* Brand Gradients */
+        --gradient-primary: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+        --gradient-glow: radial-gradient(circle at center, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+        
+        /* Accents */
+        --color-primary: #2563eb;
+        --color-border: #e2e8f0;
+        --color-border-hover: #cbd5e1;
+        
+        /* UI Tokens */
+        --radius: 16px;
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.15);
+        
+        /* Spacing */
         --space-1: 8px;
         --space-2: 12px;
         --space-3: 16px;
         --space-4: 24px;
         --space-5: 32px;
+        --space-6: 64px;
       }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --color-bg: #0b1220;
-          --color-text: #e5e7eb;
-          --color-muted: #9ca3af;
-          --color-border: #1f2937;
-          --shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
-        }
-      }
+
+      /* Global Reset & Base */
       * { box-sizing: border-box; }
-      html, body { height: 100%; }
+      html, body { height: 100%; overflow-x: hidden; }
+      
       body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-family: 'Outfit', sans-serif;
         margin: 0;
-        background: var(--color-bg);
+        background-color: var(--color-bg);
         color: var(--color-text);
+        background-image: 
+          radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.05) 0%, transparent 25%),
+          radial-gradient(circle at 0% 100%, rgba(124, 58, 237, 0.05) 0%, transparent 25%);
+        background-attachment: fixed;
       }
-      a { color: inherit; }
+
+      a { color: inherit; text-decoration: none; transition: 0.2s; }
+
+      /* Animations */
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .animate-enter { animation: fadeIn 0.6s ease-out forwards; }
+      .stagger-1 { animation-delay: 0.1s; }
+      .stagger-2 { animation-delay: 0.2s; }
+      .stagger-3 { animation-delay: 0.3s; }
+
+      /* Components */
       header {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        padding: var(--space-2) var(--space-4);
-        border-bottom: 1px solid var(--color-border);
-        backdrop-filter: saturate(140%) blur(8px);
-        background: color-mix(in oklab, var(--color-bg) 88%, transparent);
-      }
-      .logo {
-        font-weight: 700;
-        font-size: 18px;
-        text-decoration: none;
-      }
-      nav a {
-        margin-right: var(--space-3);
-        text-decoration: none;
-        padding: 8px 10px;
-        border-radius: 8px;
-      }
-      nav a:hover { background: var(--color-primary-600); color: #fff; }
-      .container {
-        max-width: 1120px;
-        margin: 0 auto;
-        padding: var(--space-4);
-      }
-      .section { padding: var(--space-5) 0; }
-      .grid { display: grid; gap: var(--space-4); }
-      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .card {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        width: 90%;
+        max-width: 1000px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--color-border);
-        border-radius: var(--radius);
-        padding: var(--space-4);
-        box-shadow: var(--shadow);
-        background: color-mix(in oklab, var(--color-bg) 95%, #fff);
+        border-radius: 100px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
       }
-      .badge {
-        display:inline-block;
-        font-size: 12px;
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: color-mix(in oklab, var(--color-primary) 18%, transparent);
-        color: #fff;
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 800;
+        font-size: 20px;
+        color: var(--color-text);
+        letter-spacing: -0.5px;
       }
-      .muted { color: var(--color-muted); }
-      .status-dot {
-        display:inline-block;
-        width: 10px; height: 10px;
-        border-radius: 999px;
-        margin-right: 6px;
-        background: #16a34a;
+
+      nav { display: flex; align-items: center; gap: 8px; }
+      nav a {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-muted);
+        padding: 8px 16px;
+        border-radius: 100px;
       }
-      .status-dot.inactive { background: #dc2626; }
-      .feature-list { list-style: none; padding: 0; margin: 0; }
-      .feature-list li { padding-left: 22px; position: relative; margin: 8px 0; }
-      .feature-list li::before {
-        content: "✓";
-        position: absolute; left: 0; top: 0;
-        color: var(--color-primary);
-      }
-      .plan { position: relative; }
-      .plan--featured {
-        border: 1px solid var(--color-primary);
-        box-shadow: 0 12px 28px rgba(59,130,246,.25);
-      }
-      .table { list-style: none; padding: 0; margin: 0; }
-      .table li {
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        border-bottom: 1px solid var(--color-border);
-        padding: 10px 0;
-      }
+      nav a:hover { color: var(--color-text); background: rgba(0,0,0,0.05); }
+
       .btn {
-        display:inline-block;
-        padding:10px 16px;
-        border-radius:10px;
-        border:1px solid var(--color-border);
-        text-decoration:none;
-        transition: transform 200ms ease, background 200ms ease, box-shadow 200ms ease, color 200ms ease;
-        background: color-mix(in oklab, var(--color-bg) 92%, #fff);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 24px;
+        border-radius: 100px;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        cursor: pointer;
       }
-      .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
-      .btn:focus-visible {
-        outline: 3px solid color-mix(in oklab, var(--color-primary) 50%, transparent);
-        outline-offset: 2px;
-      }
+
       .btn-primary {
-        background: var(--color-primary-600);
+        background: var(--gradient-primary);
         color: white;
-        border-color: var(--color-primary-600);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
       }
-      .btn-primary:hover { background: #1d4ed8; }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+      }
+
       .btn-outline {
         background: transparent;
-        color: var(--color-primary);
+        border: 1px solid var(--color-border);
+        color: var(--color-text);
+      }
+      .btn-outline:hover {
         border-color: var(--color-primary);
+        background: rgba(37, 99, 235, 0.05);
       }
-      .lead { font-size: 18px; color: var(--color-muted); }
-      .hero {
-        display: grid;
-        grid-template-columns: 1fr;
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 var(--space-4);
+      }
+      
+      .section { padding: 120px 0 80px; }
+
+      .card {
+        background: var(--color-bg-card);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        padding: var(--space-5);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+      }
+      .card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-4px);
+      }
+
+      .card::before {
+        display: none; /* Remove glimmer on light mode for cleaner look */
+      }
+      
+      .grid { display: grid; gap: var(--space-4); }
+      .grid-2 { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+      /* Utilities */
+      .badge {
+        display: inline-flex;
         align-items: center;
-        gap: var(--space-4);
+        padding: 4px 12px;
+        border-radius: 100px;
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--color-primary);
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
-      .hero h1 { font-size: 38px; line-height: 1.1; margin: 0; }
-      .hero-actions { display:flex; gap: var(--space-3); flex-wrap: wrap; }
-      .feature {
-        display:flex;
-        gap: var(--space-3);
-        align-items:flex-start;
+      
+      .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        margin-right: 8px;
       }
-      .feature .icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: color-mix(in oklab, var(--color-primary) 18%, transparent);
+      .status-dot.inactive { background: #94a3b8; }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 24px 0;
       }
-      .fade-in { animation: fade-in 500ms ease both; }
-      @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-      @media (max-width: 960px) {
-        .grid-2 { grid-template-columns: 1fr; }
-        .grid-3 { grid-template-columns: 1fr; }
-        .hero h1 { font-size: 32px; }
+      .feature-list li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        color: var(--color-text-muted);
+        font-size: 15px;
       }
-      @media (prefers-reduced-motion: reduce) {
-        .fade-in { animation: none; }
-        .btn { transition: none; }
+      .feature-list li::before {
+        content: "✓";
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--color-primary);
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .muted { color: var(--color-text-muted); }
+      
+      .footer-link {
+        color: var(--color-text-muted);
+        font-size: 15px;
+        transition: color 0.2s;
+      }
+      .footer-link:hover { color: var(--color-primary); }
+
+      @media (max-width: 768px) {
+        .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        .bg-glow { display: none; }
       }
     </style>
     <script src="https://js.stripe.com/v3" async></script>
   </head>
   <body>
     <header>
-      <div><a class="logo" href="/">FastScout</a></div>
+      <div>
+        <a class="logo" href="/">
+          <img src="/logo.png" alt="FastScout Logo" style="width: 32px; height: 32px;" />
+          FastScout
+        </a>
+      </div>
       <nav>
         <a href="/pricing">Pricing</a>
         {
@@ -199,6 +277,49 @@ const signedIn = !!data.user;
     <main class="container section">
       <slot />
     </main>
+
+    <footer style="background: var(--color-bg-card); padding: 80px 0 40px; border-top: 1px solid var(--color-border);">
+      <div class="container">
+        <div class="grid grid-3" style="margin-bottom: 60px;">
+          <!-- Brand -->
+          <div>
+            <a class="logo" href="/" style="margin-bottom: 16px; display:inline-flex;">
+              <img src="/logo.png" alt="FastScout Logo" style="width: 32px; height: 32px;" />
+              FastScout
+            </a>
+            <p class="muted" style="max-width: 280px; line-height: 1.6;">
+              Surf faster. Work smarter.<br>
+              The essential tool for automotive professionals.
+            </p>
+          </div>
+
+          <!-- Product -->
+          <div>
+            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 16px;">Product</h4>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <a href="/pricing" class="footer-link">Pricing</a>
+              <a href="/dashboard" class="footer-link">Dashboard</a>
+              <a href="#" class="footer-link">Chrome Extension</a>
+            </div>
+          </div>
+
+          <!-- Resources -->
+          <div>
+            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 16px;">Resources</h4>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <a href="#" class="footer-link">Documentation</a>
+              <a href="#" class="footer-link">Support</a>
+              <a href="/terms" class="footer-link">Terms of Service</a>
+              <a href="/privacy" class="footer-link">Privacy Policy</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--color-border); padding-top: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <p class="muted" style="font-size: 14px;">&copy; {new Date().getFullYear()} FastScout. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
   </body>
   
 </html>

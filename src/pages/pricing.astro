@@ -5,8 +5,6 @@ import { getSupabaseServerClient } from "../lib/supabase";
 
 let monthlyId = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
 const yearlyId = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
-const quarterlyId = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
-const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
 const fallbackId = import.meta.env.STRIPE_PRICE_ID as string | undefined;
 if (!monthlyId && fallbackId) monthlyId = fallbackId;
 const supabase = getSupabaseServerClient(Astro);
@@ -21,24 +19,28 @@ else if (urlError === "missing_price_id") errorBanner = "Price configuration mis
 else if (urlError === "already_subscribed") errorBanner = "You already have an active subscription.";
 let subActive = false;
 let subPriceId: string | undefined;
-if (userId) {
-  const { data: status } = await supabase
-    .from("subscription_status")
-    .select("active, price_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (status) {
-    subActive = !!status.active;
-    subPriceId = status.price_id ?? undefined;
-  }
+
+// Fetch subscription_status and billing_customers in parallel
+const [statusResult, billingResult] = await Promise.all([
+  userId
+    ? supabase.from("subscription_status").select("active, price_id").eq("user_id", userId).maybeSingle()
+    : Promise.resolve({ data: null }),
+  userId
+    ? supabase.from("billing_customers").select("stripe_customer_id").eq("user_id", userId).maybeSingle()
+    : Promise.resolve({ data: null })
+]);
+
+const status = statusResult.data;
+const billingMap = billingResult.data;
+
+if (status) {
+  subActive = !!status.active;
+  subPriceId = status.price_id ?? undefined;
 }
+
+// Only call Stripe if DB says not active
 if (!subActive && userEmail && userId) {
-  const { data: map } = await supabase
-    .from("billing_customers")
-    .select("stripe_customer_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  const customerId = map?.stripe_customer_id as string | undefined;
+  const customerId = billingMap?.stripe_customer_id as string | undefined;
   if (customerId) {
     const res = await findActiveSubscriptionByCustomerId(customerId);
     subActive = res.active;
@@ -49,56 +51,84 @@ if (!subActive && userEmail && userId) {
     subPriceId = subPriceId ?? res.priceId;
   }
 }
-let monthlyAmount = 500;
-let yearlyAmount = 5000;
-let quarterlyAmount = 1400;
-let halfyearlyAmount = 2700;
-let monthlyCurrency = "USD";
-let yearlyCurrency = "USD";
-let quarterlyCurrency = "USD";
-let halfyearlyCurrency = "USD";
-try {
-  if (monthlyId) {
-    const m = await stripe.prices.retrieve(monthlyId);
-    monthlyAmount = m.unit_amount ?? monthlyAmount;
-    monthlyCurrency = (m.currency ?? monthlyCurrency).toUpperCase();
-  }
-  if (yearlyId) {
-    const y = await stripe.prices.retrieve(yearlyId);
-    yearlyAmount = y.unit_amount ?? yearlyAmount;
-    yearlyCurrency = (y.currency ?? yearlyCurrency).toUpperCase();
-  }
-  if (quarterlyId) {
-    const q = await stripe.prices.retrieve(quarterlyId);
-    quarterlyAmount = q.unit_amount ?? quarterlyAmount;
-    quarterlyCurrency = (q.currency ?? quarterlyCurrency).toUpperCase();
-  }
-  if (halfyearlyId) {
-    const h = await stripe.prices.retrieve(halfyearlyId);
-    halfyearlyAmount = h.unit_amount ?? halfyearlyAmount;
-    halfyearlyCurrency = (h.currency ?? halfyearlyCurrency).toUpperCase();
-  }
-} catch {}
-const monthlyDisplay = `$${(monthlyAmount / 100).toFixed(0)}/month`;
-const yearlyDisplay = `$${(yearlyAmount / 100).toFixed(0)}/year`;
-const quarterlyDisplay = `$${(quarterlyAmount / 100).toFixed(0)}/quarter`;
-const halfyearlyDisplay = `$${(halfyearlyAmount / 100).toFixed(0)}/6 months`;
+
+// Use env vars for price amounts (primary), Stripe API as fallback
+let monthlyAmount = parseInt(import.meta.env.STRIPE_PRICE_MONTHLY_AMOUNT ?? "0") || 0;
+let yearlyAmount = parseInt(import.meta.env.STRIPE_PRICE_YEARLY_AMOUNT ?? "0") || 0;
+let monthlyCurrency = (import.meta.env.STRIPE_PRICE_CURRENCY ?? "USD").toUpperCase();
+let yearlyCurrency = monthlyCurrency;
+
+// Only fetch from Stripe if env vars not set
+if (!monthlyAmount || !yearlyAmount) {
+  try {
+    const pricePromises: Promise<void>[] = [];
+    if (!monthlyAmount && monthlyId) {
+      pricePromises.push(
+        stripe.prices.retrieve(monthlyId).then(p => {
+          monthlyAmount = p.unit_amount ?? 500;
+          monthlyCurrency = (p.currency ?? "usd").toUpperCase();
+        })
+      );
+    }
+    if (!yearlyAmount && yearlyId) {
+      pricePromises.push(
+        stripe.prices.retrieve(yearlyId).then(p => {
+          yearlyAmount = p.unit_amount ?? 5000;
+          yearlyCurrency = (p.currency ?? "usd").toUpperCase();
+        })
+      );
+    }
+    await Promise.all(pricePromises);
+  } catch {}
+}
+
+// Default fallbacks
+if (!monthlyAmount) monthlyAmount = 500;
+if (!yearlyAmount) yearlyAmount = 5000;
+const monthlyDisplay = `$${(monthlyAmount / 100).toFixed(0)}/mo`;
+const yearlyDisplay = `$${(yearlyAmount / 100).toFixed(0)}/yr`;
 ---
 <Layout title="Pricing">
-  <section>
-    <h2>Plans</h2>
-    <p class="lead">Simple, transparent pricing. Pick monthly or save with annual.</p>
+  <section style="max-width: 900px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 60px;">
+      <h2 style="font-size: 3rem; margin-bottom: 16px;">Simple Pricing</h2>
+      <p class="lead" style="max-width: 500px; margin: 0 auto;">Transparent pricing for professionals. Choose the plan that fits your workflow.</p>
+    </div>
+
     <style is:inline>
-      .pricing-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
-      .plan { min-height: 320px; }
-      .plan--featured { min-height: 360px; box-shadow: 0 14px 32px rgba(59,130,246,.22); border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); }
-      .plan .hero-actions { display:flex; }
-      .plan .hero-actions .btn { flex: 1 1 0; min-width: 160px; text-align: center; }
-      @media (max-width: 960px) { .pricing-grid { grid-template-columns: 1fr; } }
+      .pricing-grid { 
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 32px; 
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .plan { 
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .plan--featured { 
+        border: 2px solid transparent;
+        background: linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box,
+                    var(--gradient-primary) border-box;
+        box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.15);
+        color: var(--color-text);
+      }
+      .plan-header { margin-bottom: 32px; }
+      .price-tag { font-size: 42px; font-weight: 800; color: var(--color-text); line-height: 1; }
+      .price-period { font-size: 16px; color: var(--color-text-muted); font-weight: 500; }
+      
+      .feature-list { margin: 32px 0; flex-grow: 1; }
+      .feature-list li { margin-bottom: 16px; font-size: 16px; }
+      
+      @media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; } }
     </style>
+
     {
       errorBanner ? (
-        <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 12%, transparent); margin-top:16px">
+        <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 12%, transparent); margin-bottom:32px; text-align:center">
           <strong style="color:#ef4444">Error</strong>
           <p class="lead" style="margin-top:6px">{errorBanner}</p>
           {
@@ -111,144 +141,100 @@ const halfyearlyDisplay = `$${(halfyearlyAmount / 100).toFixed(0)}/6 months`;
         </div>
       ) : null
     }
-    <div class="pricing-grid" style="margin-top:16px">
+
+    <div class="pricing-grid">
+      <!-- Monthly Plan -->
       <div class="card plan">
-        <h3>Monthly</h3>
-        <p class="lead">{monthlyDisplay} · cancel anytime</p>
+        <div class="plan-header">
+          <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px;">Monthly</h3>
+          <div style="display:flex; align-items:baseline; gap:4px">
+            <span class="price-tag">{monthlyDisplay}</span>
+          </div>
+          <p class="muted" style="margin-top: 8px;">Flexible access, cancel anytime.</p>
+        </div>
+        
         <ul class="feature-list">
-          <li>Dashboard access</li>
-          <li>Extension token</li>
-          <li>Email support</li>
+          <li>Full Dashboard Access</li>
+          <li>Unlimited Quick Bids</li>
+          <li>Chrome Extension</li>
+          <li>Standard Support</li>
         </ul>
+
+        <div style="margin-top: auto;">
         {
           subActive ? (
             subPriceId === monthlyId ? (
-              <div class="hero-actions" aria-label="Current Monthly">
-                <button class="btn btn-primary" type="button" disabled>Current Plan</button>
-                <a class="btn" href="/dashboard">View Dashboard</a>
-              </div>
+              <button class="btn btn-outline" style="width: 100%;" disabled>Current Plan</button>
             ) : (
-              <form action="/api/change-plan" method="POST" class="hero-actions" aria-label="Switch to Monthly">
+              <form action="/api/change-plan" method="POST">
                 <input type="hidden" name="plan" value="monthly" />
-                <button class="btn btn-primary" type="submit">Switch to Monthly</button>
-                <a class="btn" href="/dashboard">View Dashboard</a>
+                <button class="btn btn-outline" style="width: 100%;" type="submit">Switch to Monthly</button>
               </form>
-              <div class="muted" style="margin-top:6px">Applies next cycle</div>
             )
           ) : (
-            <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Monthly">
+            <form action="/api/checkout" method="POST">
               <input type="hidden" name="plan" value="monthly" />
-              <button class="btn btn-primary" type="submit">Choose Monthly</button>
-              <a class="btn" href="/dashboard">View Dashboard</a>
+              <button class="btn btn-outline" style="width: 100%;" type="submit">Choose Monthly</button>
             </form>
           )
         }
+        </div>
       </div>
+
+      <!-- Annual Plan (Featured) -->
       <div class="card plan plan--featured">
-        <div class="badge">Best value</div>
-        <h3>Annual</h3>
-        <p class="lead">{yearlyDisplay} · save over monthly</p>
+        <div class="plan-header">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+            <h3 style="font-size: 20px; font-weight: 600; margin:0;">Annual</h3>
+            <span class="badge">Best Value</span>
+          </div>
+          <div style="display:flex; align-items:baseline; gap:4px">
+            <span class="price-tag">{yearlyDisplay}</span>
+          </div>
+          <p class="muted" style="margin-top: 8px;">Commit to growth & save 17%.</p>
+        </div>
+
         <ul class="feature-list">
-          <li>Dashboard access</li>
-          <li>Extension token</li>
-          <li>Priority support</li>
+          <li><strong>Everything in Monthly</strong></li>
+          <li>Priority Support</li>
+          <li>Early Access to Features</li>
+          <li>Dedicated Account Review</li>
         </ul>
+
+        <div style="margin-top: auto;">
         {
           subActive ? (
             subPriceId === yearlyId ? (
-              <div class="hero-actions" aria-label="Current Annual">
-                <button class="btn btn-primary" type="button" disabled>Current Plan</button>
-                <a class="btn" href="/dashboard">View Dashboard</a>
-              </div>
+              <button class="btn btn-primary" style="width: 100%;" disabled>Current Plan</button>
             ) : (
-              <form action="/api/change-plan" method="POST" class="hero-actions" aria-label="Switch to Annual">
+              <form action="/api/change-plan" method="POST">
                 <input type="hidden" name="plan" value="annual" />
-                <button class="btn btn-primary" type="submit">Switch to Annual</button>
-                <a class="btn" href="/dashboard">View Dashboard</a>
+                <button class="btn btn-primary" style="width: 100%;" type="submit">Switch to Annual</button>
               </form>
-              <div class="muted" style="margin-top:6px">Applies next cycle</div>
             )
           ) : (
-            <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Annual">
+            <form action="/api/checkout" method="POST">
               <input type="hidden" name="plan" value="annual" />
-              <button class="btn btn-primary" type="submit">Choose Annual</button>
-              <a class="btn" href="/dashboard">View Dashboard</a>
+              <button class="btn btn-primary" style="width: 100%;" type="submit">Choose Annual</button>
             </form>
           )
         }
-      </div>
-      <div class="card plan">
-        <h3>Half‑yearly</h3>
-        <p class="lead">{halfyearlyDisplay}</p>
-        <ul class="feature-list">
-          <li>Dashboard access</li>
-          <li>Extension token</li>
-          <li>Email support</li>
-        </ul>
-        {
-          subActive ? (
-            subPriceId === halfyearlyId ? (
-              <div class="hero-actions" aria-label="Current Half-yearly">
-                <button class="btn btn-primary" type="button" disabled>Current Plan</button>
-                <a class="btn" href="/dashboard">View Dashboard</a>
-              </div>
-            ) : (
-              <form action="/api/change-plan" method="POST" class="hero-actions" aria-label="Switch to Half-yearly">
-                <input type="hidden" name="plan" value="halfyearly" />
-                <button class="btn btn-primary" type="submit">Switch to Half‑yearly</button>
-                <a class="btn" href="/dashboard">View Dashboard</a>
-              </form>
-              <div class="muted" style="margin-top:6px">Applies next cycle</div>
-            )
-          ) : (
-            <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Half-yearly">
-              <input type="hidden" name="plan" value="halfyearly" />
-              <button class="btn btn-primary" type="submit">Choose Half‑yearly</button>
-              <a class="btn" href="/dashboard">View Dashboard</a>
-            </form>
-          )
-        }
-      </div>
-      <div class="card plan">
-        <h3>Quarterly</h3>
-        <p class="lead">{quarterlyDisplay}</p>
-        <ul class="feature-list">
-          <li>Dashboard access</li>
-          <li>Extension token</li>
-          <li>Email support</li>
-        </ul>
-        {
-          subActive ? (
-            subPriceId === quarterlyId ? (
-              <div class="hero-actions" aria-label="Current Quarterly">
-                <button class="btn btn-primary" type="button" disabled>Current Plan</button>
-                <a class="btn" href="/dashboard">View Dashboard</a>
-              </div>
-            ) : (
-              <form action="/api/change-plan" method="POST" class="hero-actions" aria-label="Switch to Quarterly">
-                <input type="hidden" name="plan" value="quarterly" />
-                <button class="btn btn-primary" type="submit">Switch to Quarterly</button>
-                <a class="btn" href="/dashboard">View Dashboard</a>
-              </form>
-              <div class="muted" style="margin-top:6px">Applies next cycle</div>
-            )
-          ) : (
-            <form action="/api/checkout" method="POST" class="hero-actions" aria-label="Subscribe Quarterly">
-              <input type="hidden" name="plan" value="quarterly" />
-              <button class="btn btn-primary" type="submit">Choose Quarterly</button>
-              <a class="btn" href="/dashboard">View Dashboard</a>
-            </form>
-          )
-        }
+        </div>
       </div>
     </div>
-    <div class="card" style="margin-top:24px">
-      <h3>FAQ</h3>
-      <ul class="feature-list">
-        <li>Can I cancel anytime? Yes — use “Manage billing” in your dashboard.</li>
-        <li>How do I get invoices? Your invoices appear in the dashboard with PDF links.</li>
-        <li>What happens after payment? Features turn on after sign‑in and subscription activation.</li>
-      </ul>
+
+    <div class="card" style="margin-top: 60px; text-align: left;">
+      <h3 style="margin-bottom: 24px;">Frequently Asked Questions</h3>
+      <div class="grid grid-2">
+        <div>
+          <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Can I cancel anytime?</h4>
+          <p class="muted" style="font-size: 15px; line-height: 1.6;">Yes, absolutely. You can cancel your subscription at any time from your dashboard settings. Your access will continue until the end of your billing period.</p>
+        </div>
+        <div>
+          <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">How are invoices handled?</h4>
+          <p class="muted" style="font-size: 15px; line-height: 1.6;">Invoices are automatically generated and emailed to you. You can also view and download past invoices directly from your dashboard.</p>
+        </div>
+      </div>
     </div>
   </section>
 </Layout>

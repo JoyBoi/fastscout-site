@@ -16,7 +16,8 @@ export const GET: APIRoute = async (ctx) => {
     max_count: 5,
     window_seconds: 60,
   });
-  const proceed = rlError ? true : !!allowed;
+  // Fail closed: deny on rate limit error (don't allow if RPC fails)
+  const proceed = rlError ? false : !!allowed;
   const siteUrl = import.meta.env.SITE_URL as string;
   if (!proceed) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
 

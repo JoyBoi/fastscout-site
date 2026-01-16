@@ -11,39 +11,48 @@ const userEmail = data.user?.email as string | undefined;
 const userId = data.user?.id as string | undefined;
 
 let sub = { active: false, customerId: undefined, priceId: undefined, periodEnd: undefined } as { active: boolean; customerId?: string; priceId?: string; periodEnd?: string };
-if (userId) {
-  const { data: status } = await supabase
-    .from("subscription_status")
-    .select("active, price_id, current_period_end")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (status) {
-    sub = { active: !!status.active, priceId: status.price_id ?? undefined, periodEnd: status.current_period_end ?? undefined };
-  } else {
-    const { data: map } = await supabase
-      .from("billing_customers")
-      .select("stripe_customer_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (map?.stripe_customer_id) {
-      sub = await findActiveSubscriptionByCustomerId(map.stripe_customer_id);
-    } else if (userEmail) {
-      sub = await findActiveSubscriptionByEmail(userEmail);
-    }
-  }
-}
 let invoices: Array<{ id: string; status: string | null; amount_due: number; currency: string; hosted_invoice_url: string | null; invoice_pdf: string | null; created: number }> = [];
 let nextBilling: string | null = null;
 let planLabel: string | null = null;
 let renewalDays: number | null = null;
 let lastInvoiceAmount: string | null = null;
 let lastInvoiceDate: string | null = null;
-const { data: s } = await supabase.auth.getSession();
-const accessToken = s.session?.access_token;
 const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
 const displayName = (data.user?.user_metadata as any)?.name ?? userEmail ?? "";
 const avatarInitial = (displayName || "U").slice(0, 1).toUpperCase();
 let invoicesCount = 0;
+
+// Cache billing_customers to avoid duplicate lookups
+let cachedBillingMap: { stripe_customer_id?: string } | null = null;
+let billingMapFetched = false;
+
+// Fetch subscription_status, billing_customers, and session in parallel
+const [statusResult, billingResult, sessionResult] = await Promise.all([
+  userId
+    ? supabase.from("subscription_status").select("active, price_id, current_period_end").eq("user_id", userId).maybeSingle()
+    : Promise.resolve({ data: null }),
+  userId
+    ? supabase.from("billing_customers").select("stripe_customer_id").eq("user_id", userId).maybeSingle()
+    : Promise.resolve({ data: null }),
+  supabase.auth.getSession()
+]);
+
+const status = statusResult.data;
+cachedBillingMap = billingResult.data;
+billingMapFetched = true;
+const accessToken = sessionResult.data.session?.access_token;
+
+if (status) {
+  sub = { active: !!status.active, priceId: status.price_id ?? undefined, periodEnd: status.current_period_end ?? undefined };
+} else if (userId) {
+  // Use cached billing_customers result
+  if (cachedBillingMap?.stripe_customer_id) {
+    sub = await findActiveSubscriptionByCustomerId(cachedBillingMap.stripe_customer_id);
+  } else if (userEmail) {
+    sub = await findActiveSubscriptionByEmail(userEmail);
+  }
+}
+
 if (accessToken && base) {
   const res = await fetch(`${base}/invoices`, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (res.ok) {
@@ -52,15 +61,8 @@ if (accessToken && base) {
   }
 }
 if (invoices.length === 0 && userEmail) {
-  let customerId: string | undefined;
-  if (userId) {
-    const { data: map } = await supabase
-      .from("billing_customers")
-      .select("stripe_customer_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    customerId = map?.stripe_customer_id as string | undefined;
-  }
+  // Reuse cached billing_customers result
+  let customerId = cachedBillingMap?.stripe_customer_id as string | undefined;
   if (!customerId) {
     const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     customerId = customers.data[0]?.id;
@@ -94,13 +96,9 @@ if (sub.periodEnd) {
 }
 const monthlyPrice = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
 const yearlyPrice = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
-const quarterlyPrice = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
-const halfyearlyPrice = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
 if (sub.priceId) {
   if (monthlyPrice && sub.priceId === monthlyPrice) planLabel = "Monthly";
   else if (yearlyPrice && sub.priceId === yearlyPrice) planLabel = "Annual";
-  else if (quarterlyPrice && sub.priceId === quarterlyPrice) planLabel = "Quarterly";
-  else if (halfyearlyPrice && sub.priceId === halfyearlyPrice) planLabel = "Half‑yearly";
 }
 const urlError = new URL(Astro.request.url).searchParams.get("error");
 const urlSuccess = new URL(Astro.request.url).searchParams.get("success");
@@ -131,16 +129,31 @@ if (urlSuccess === "plan_change_scheduled") {
 }
 ---
 <Layout title="Dashboard">
-  <section class="grid" style="max-width:720px;margin:0 auto">
-    <h2 style="text-align:center">Dashboard</h2>
+  <div class="glow-orb" style="top: -10%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%); filter: blur(60px); position: absolute; z-index: -1;"></div>
+
+  <section class="container section" style="max-width: 1000px; padding-top: 30px;">
+    
+    <div style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
+      <div>
+        <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px;">Dashboard</h1>
+        <p class="muted" style="font-size: 1.1rem;">Welcome back, {displayName.split(' ')[0]}</p>
+      </div>
+      <form action="/auth/signout" method="POST">
+        <button class="btn btn-outline" style="font-size: 14px; padding: 8px 16px;">Sign out</button>
+      </form>
+    </div>
+
     {
       errorBanner ? (
-        <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 12%, transparent)">
-          <strong style="color:#ef4444">Error</strong>
-          <p class="lead" style="margin-top:6px">{errorBanner}</p>
+        <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 8%, transparent); margin-bottom: 32px;">
+          <strong style="color:#ef4444; display:flex; align-items:center; gap:8px">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Action Required
+          </strong>
+          <p class="muted" style="margin-top:4px">{errorBanner}</p>
           {
             errorCtaHref && errorCtaLabel ? (
-              <div style="margin-top:10px">
+              <div style="margin-top:12px">
                 <a class="btn" href={errorCtaHref}>{errorCtaLabel}</a>
               </div>
             ) : null
@@ -148,14 +161,18 @@ if (urlSuccess === "plan_change_scheduled") {
         </div>
       ) : null
     }
+
     {
       successBanner ? (
-        <div class="card" style="border-color:#16a34a;background: color-mix(in oklab, #16a34a 12%, transparent)">
-          <strong style="color:#16a34a">Success</strong>
-          <p class="lead" style="margin-top:6px">{successBanner}</p>
+        <div class="card" style="border-color:#22c55e;background: color-mix(in oklab, #22c55e 8%, transparent); margin-bottom: 32px;">
+           <strong style="color:#16a34a; display:flex; align-items:center; gap:8px">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Success
+          </strong>
+          <p class="muted" style="margin-top:4px">{successBanner}</p>
           {
             successCtaHref && successCtaLabel ? (
-              <div style="margin-top:10px">
+              <div style="margin-top:12px">
                 <a class="btn" href={successCtaHref}>{successCtaLabel}</a>
               </div>
             ) : null
@@ -163,123 +180,197 @@ if (urlSuccess === "plan_change_scheduled") {
         </div>
       ) : null
     }
-    <div class="card" style="display:flex; align-items:center; gap:16px; justify-content:space-between">
-      <div style="display:flex; align-items:center; gap:12px">
-        <div style="width:48px; height:48px; border-radius:999px; background: color-mix(in oklab, var(--color-primary) 18%, transparent); display:flex; align-items:center; justify-content:center; font-weight:600">
-          {avatarInitial}
-        </div>
-        <div>
-          <div style="font-weight:600">{displayName}</div>
-          <div class="muted" style="font-size:13px">{userEmail}</div>
-        </div>
-      </div>
-      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
-        <span class="badge">{planLabel ?? (sub.active ? "Active" : "No plan")}</span>
-        <span class="muted">Invoices: <strong>{invoicesCount}</strong></span>
-        <span class="muted">Next billing: <strong>{nextBilling ?? "—"}</strong></span>
-      </div>
-    </div>
-    <div class="card" style="display:flex; align-items:center; gap:16px; justify-content:space-between">
-      <div class="muted">Last invoice: <strong>{lastInvoiceAmount ?? "—"}</strong>{lastInvoiceDate ? ` · ${lastInvoiceDate}` : ""}</div>
-      <RenewalCountdown periodEnd={sub.periodEnd ?? ""} />
-      <div class="muted">Total invoices: <strong>{invoicesCount}</strong></div>
-    </div>
-    {
-      userEmail ? (
-        <>
-          <div class="grid">
-            <div class="card">
-              <p class="muted">Signed in as <strong>{userEmail}</strong></p>
-              {
-                sub.active ? (
-                  <>
-                    <p><span class="status-dot"></span><strong>Active subscription</strong></p>
-                    {
-                      planLabel ? (<p class="muted">Plan: <strong>{planLabel}</strong></p>) : null
-                    }
-                    {
-                      nextBilling ? (<p class="muted">Next billing: <strong>{nextBilling}</strong></p>) : null
-                    }
-                    <div class="hero-actions" style="margin-top:16px">
-                      <a class="btn" href="/auth/signout">Sign out</a>
-                      <a class="btn btn-primary" href="/api/portal">Manage billing</a>
-                    </div>
-                    <div class="hero-actions" style="margin-top:12px">
-                      <form action="/api/cancel" method="POST" style="display:inline-block; margin-right:12px">
-                        <input type="hidden" name="at_period_end" value="true" />
-                        <button class="btn" type="submit">Cancel at period end</button>
-                      </form>
-                      <form action="/api/cancel" method="POST" style="display:inline-block; margin-right:12px">
-                        <input type="hidden" name="at_period_end" value="false" />
-                        <button class="btn" type="submit">Cancel now</button>
-                      </form>
-                      <form action="/api/reactivate" method="POST" style="display:inline-block">
-                        <button class="btn" type="submit">Reactivate</button>
-                      </form>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p><span class="status-dot inactive"></span><strong>No active subscription</strong></p>
-                    <p class="muted">Choose a plan to get started.</p>
-                    <div class="hero-actions" style="margin-top:12px">
-                      <form action="/api/checkout" method="POST" style="display:inline-block">
-                        <input type="hidden" name="plan" value="monthly" />
-                        <button class="btn btn-primary" type="submit">Choose Monthly</button>
-                      </form>
-                      <form action="/api/checkout" method="POST" style="display:inline-block">
-                        <input type="hidden" name="plan" value="annual" />
-                        <button class="btn" type="submit">Choose Annual</button>
-                      </form>
-                      <form action="/api/checkout" method="POST" style="display:inline-block">
-                        <input type="hidden" name="plan" value="quarterly" />
-                        <button class="btn" type="submit">Choose Quarterly</button>
-                      </form>
-                      <form action="/api/checkout" method="POST" style="display:inline-block">
-                        <input type="hidden" name="plan" value="halfyearly" />
-                        <button class="btn" type="submit">Choose Half‑yearly</button>
-                      </form>
-                      <a class="btn" href="/pricing">View pricing</a>
-                    </div>
-                  </>
-                )
-              }
+
+    <div class="dashboard-grid">
+      <!-- Main Column -->
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <!-- Subscription Status Card -->
+        <div class="card sub-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div>
+              <p class="badge" style="margin-bottom: 12px; background: rgba(255,255,255,0.2); color: white;">Current Plan</p>
+              <h2 style="color: white; font-size: 2rem; margin: 0;">{planLabel ?? (sub.active ? "Active Plan" : "Free Tier")}</h2>
             </div>
-            <div class="card">
-              <h3>Invoices</h3>
-              {
-                invoices.length > 0 ? (
-                  <ul class="table">
-                    {
-                      invoices.map((i) => (
-                        <li>
-                          <span>#{i.id} · {(i.amount_due / 100).toFixed(2)} {i.currency.toUpperCase()} · {new Date(i.created * 1000).toLocaleDateString()}</span>
-                          <span>
-                            {
-                              i.invoice_pdf ? (
-                                <a class="btn" style="margin-left:8px" href={i.invoice_pdf} target="_blank" rel="noreferrer">PDF</a>
-                              ) : i.hosted_invoice_url ? (
-                                <a class="btn" style="margin-left:8px" href={i.hosted_invoice_url} target="_blank" rel="noreferrer">View</a>
-                              ) : null
-                            }
-                          </span>
-                        </li>
-                      ))
-                    }
-                  </ul>
-                ) : (
-                  <p class="muted">No invoices yet.</p>
-                )
-              }
+            { sub.active ? <div class="status-pill active">Active</div> : <div class="status-pill inactive">Inactive</div> }
+          </div>
+
+          <div style="margin-top: auto;">
+             {
+              sub.active ? (
+                <div style="display:flex; justify-content: space-between; align-items: flex-end;">
+                   <div>
+                      <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 4px;">Next billing</p>
+                      <p style="color: white; font-weight: 600; font-size: 16px;">{nextBilling}</p>
+                   </div>
+                   <form action="/api/portal" method="POST">
+                      <button class="btn" style="background: white; color: var(--color-primary); border: none;">Manage Billing</button>
+                   </form>
+                </div>
+              ) : (
+                <div style="display:flex; justify-content: space-between; align-items: center;">
+                  <p style="color: rgba(255,255,255,0.8);">Unlock full access to FastScout.</p>
+                  <a class="btn" href="/pricing" style="background: white; color: var(--color-primary); border: none;">Upgrade Plan</a>
+                </div>
+              )
+            }
+          </div>
+        </div>
+
+        <!-- Invoices -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.25rem; font-weight: 700;">Billing History</h3>
+            <span class="muted" style="font-size: 14px;">Last 12 months</span>
+          </div>
+          
+          {
+            invoices.length > 0 ? (
+              <ul class="invoice-list">
+                {
+                  invoices.map((i) => (
+                    <li>
+                      <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; background: var(--color-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
+                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        <div>
+                          <div style="font-weight: 600; font-size: 15px;">Invoice #{i.id.slice(-6).toUpperCase()}</div>
+                          <div class="muted" style="font-size: 13px;">{new Date(i.created * 1000).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 16px;">
+                        <span style="font-weight: 600; font-size: 15px;">{(i.amount_due / 100).toFixed(2)} {i.currency.toUpperCase()}</span>
+                        {
+                          i.invoice_pdf ? (
+                            <a href={i.invoice_pdf} target="_blank" rel="noreferrer" class="btn-icon" title="Download PDF">
+                              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            </a>
+                          ) : null
+                        }
+                      </div>
+                    </li>
+                  ))
+                }
+              </ul>
+            ) : (
+              <div style="text-align: center; padding: 40px 0;">
+                <p class="muted">No invoices found.</p>
+              </div>
+            )
+          }
+        </div>
+      </div>
+
+      <!-- Side Column -->
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Profile Card -->
+        <div class="card">
+          <div style="display:flex; align-items:center; gap:16px; margin-bottom: 20px;">
+            <div style="width:56px; height:56px; border-radius:50%; background: linear-gradient(135deg, #e0e7ff 0%, #fae8ff 100%); display:flex; align-items:center; justify-content:center; font-weight:700; font-size: 24px; color: var(--color-primary);">
+              {avatarInitial}
+            </div>
+            <div>
+              <div style="font-weight:700; font-size: 1.1rem; line-height: 1.2;">{displayName}</div>
+              <div class="muted" style="font-size:14px">{userEmail}</div>
             </div>
           </div>
-        </>
-      ) : (
-        <>
-          <p>You need to sign in to access the dashboard.</p>
-          <a class="btn btn-primary" href="/auth/signin">Sign In</a>
-        </>
-      )
-    }
+          
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+            <div style="background: var(--color-bg); padding: 12px; border-radius: 12px; text-align: center;">
+              <div class="muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Invoices</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--color-text); margin-top: 4px;">{invoicesCount}</div>
+            </div>
+             <div style="background: var(--color-bg); padding: 12px; border-radius: 12px; text-align: center;">
+              <div class="muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Next Bill</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--color-text); margin-top: 4px;">{renewalDays ?? "—"}d</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        { sub.active ? (
+          <div class="card">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Quick Actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <form action="/api/portal" method="POST">
+                 <button class="btn btn-outline" style="width: 100%; justify-content: flex-start;">
+                    Update Payment Method
+                 </button>
+              </form>
+               <form action="/api/cancel" method="POST">
+                  <input type="hidden" name="at_period_end" value="true" />
+                  <button class="btn btn-outline" style="width: 100%; justify-content: flex-start; color: #ef4444; border-color: color-mix(in oklab, #ef4444 20%, transparent);">
+                    Cancel Subscription
+                  </button>
+              </form>
+            </div>
+          </div>
+        ) : null }
+
+        <div style="padding: 16px; text-align: center;">
+           <p class="muted" style="font-size: 14px; margin-bottom: 8px;">Need help?</p>
+           <a href="mailto:support@fastscout.app" style="font-weight: 600; color: var(--color-primary);">Contact Support</a>
+        </div>
+      </div>
+
+    </div>
   </section>
+
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 32px;
+    }
+    .sub-card {
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-glow);
+    }
+    .status-pill {
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-pill.active { background: #22c55e; color: white; box-shadow: 0 0 12px rgba(34, 197, 94, 0.4); }
+    .status-pill.inactive { background: rgba(255,255,255,0.2); color: white; }
+
+    .invoice-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .invoice-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .invoice-list li:last-child { border-bottom: none; padding-bottom: 0; }
+    
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      color: var(--color-text-muted);
+      transition: all 0.2s;
+    }
+    .btn-icon:hover { background: var(--color-bg-card); color: var(--color-primary); }
+
+    @media (max-width: 800px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </Layout>

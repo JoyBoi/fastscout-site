@@ -21,23 +21,33 @@ export const GET: APIRoute = async (ctx) => {
   let subscriptionActive = false;
   let priceId: string | undefined;
   let periodEnd: string | undefined;
-  const { data: status } = await supabase
-    .from("subscription_status")
-    .select("active, price_id, current_period_end")
-    .eq("user_id", userId)
-    .maybeSingle();
+
+  // Fetch both tables in parallel - billing_customers is cheap and we may need it
+  const [statusResult, billingResult] = await Promise.all([
+    supabase
+      .from("subscription_status")
+      .select("active, price_id, current_period_end")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase
+      .from("billing_customers")
+      .select("stripe_customer_id")
+      .eq("user_id", userId)
+      .maybeSingle()
+  ]);
+
+  const status = statusResult.data;
+  const billingMap = billingResult.data;
+
   if (status) {
     subscriptionActive = !!status.active;
     priceId = status.price_id ?? undefined;
     periodEnd = status.current_period_end ?? undefined;
   }
+
+  // Only call Stripe if DB says not active
   if (!subscriptionActive && email) {
-    const { data: map } = await supabase
-      .from("billing_customers")
-      .select("stripe_customer_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    const customerId = map?.stripe_customer_id as string | undefined;
+    const customerId = billingMap?.stripe_customer_id as string | undefined;
     if (customerId) {
       const res = await findActiveSubscriptionByCustomerId(customerId);
       subscriptionActive = res.active;

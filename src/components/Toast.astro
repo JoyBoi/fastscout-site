@@ -1,0 +1,232 @@
+---
+// Toast notification component
+// Displays success/error messages from URL params and auto-dismisses
+---
+<div id="toast-container" aria-live="polite" aria-atomic="true">
+  <div id="toast" class="toast" role="alert" hidden>
+    <div class="toast-content">
+      <span class="toast-icon" aria-hidden="true"></span>
+      <span class="toast-message"></span>
+    </div>
+    <button class="toast-close" aria-label="Close notification" type="button">&times;</button>
+  </div>
+</div>
+
+<style>
+  #toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+  }
+
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--color-border, #e2e8f0);
+    min-width: 300px;
+    max-width: 450px;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .toast[hidden] {
+    display: none;
+  }
+
+  .toast.toast--success {
+    border-left: 4px solid #22c55e;
+  }
+
+  .toast.toast--error {
+    border-left: 4px solid #ef4444;
+  }
+
+  .toast-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .toast-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .toast--success .toast-icon {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+
+  .toast--error .toast-icon {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+
+  .toast-message {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text, #0f172a);
+    line-height: 1.4;
+  }
+
+  .toast-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--color-text-muted, #64748b);
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .toast-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+
+  .toast.toast--hiding {
+    animation: slideOut 0.3s ease-in forwards;
+  }
+
+  @media (max-width: 480px) {
+    #toast-container {
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+    }
+    .toast {
+      min-width: auto;
+      max-width: none;
+    }
+  }
+</style>
+
+<script>
+  const errorMessages: Record<string, string> = {
+    rate_limited: "Too many requests. Please try again in a minute.",
+    rate_limit_error: "Rate limit service error. Please retry.",
+    checkout_failed: "Checkout failed. Please try again.",
+    missing_price_id: "Price configuration missing.",
+    already_subscribed: "You already have an active subscription.",
+    no_active_subscription: "You do not have an active subscription.",
+    misconfigured_edge_function: "Billing service is misconfigured.",
+    change_plan_failed: "Failed to change plan. Please try again.",
+  };
+
+  const successMessages: Record<string, string> = {
+    plan_change_scheduled: "Plan change scheduled! It will take effect at your next billing cycle.",
+    plan_unchanged: "You're already on this plan.",
+    subscription_cancelled: "Subscription cancelled successfully.",
+    subscription_reactivated: "Subscription reactivated successfully.",
+  };
+
+  function showToast(message: string, type: "success" | "error") {
+    const toast = document.getElementById("toast");
+    const messageEl = toast?.querySelector(".toast-message");
+    const iconEl = toast?.querySelector(".toast-icon");
+
+    if (!toast || !messageEl || !iconEl) return;
+
+    toast.classList.remove("toast--success", "toast--error", "toast--hiding");
+    toast.classList.add(`toast--${type}`);
+    messageEl.textContent = message;
+    iconEl.textContent = type === "success" ? "✓" : "!";
+    toast.hidden = false;
+
+    // Auto-dismiss after 5 seconds
+    const dismissTimeout = setTimeout(() => hideToast(), 5000);
+
+    // Store timeout ID for cleanup
+    (toast as any)._dismissTimeout = dismissTimeout;
+  }
+
+  function hideToast() {
+    const toast = document.getElementById("toast");
+    if (!toast || toast.hidden) return;
+
+    // Clear any pending dismiss timeout
+    if ((toast as any)._dismissTimeout) {
+      clearTimeout((toast as any)._dismissTimeout);
+    }
+
+    toast.classList.add("toast--hiding");
+    setTimeout(() => {
+      toast.hidden = true;
+      toast.classList.remove("toast--hiding");
+    }, 300);
+  }
+
+  // Check URL params on load
+  function checkUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+    const success = params.get("success");
+
+    if (error && errorMessages[error]) {
+      showToast(errorMessages[error], "error");
+      // Clean up URL
+      params.delete("error");
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    } else if (success && successMessages[success]) {
+      showToast(successMessages[success], "success");
+      // Clean up URL
+      params.delete("success");
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }
+
+  // Initialize
+  document.addEventListener("DOMContentLoaded", checkUrlParams);
+
+  // Also run on Astro page transitions
+  document.addEventListener("astro:page-load", checkUrlParams);
+
+  // Close button handler
+  document.getElementById("toast")?.querySelector(".toast-close")?.addEventListener("click", hideToast);
+</script>
