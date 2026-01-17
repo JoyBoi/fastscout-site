@@ -137,7 +137,7 @@ if (urlSuccess === "plan_change_scheduled") {
 }
 ---
 <Layout title="Dashboard" locale={locale}>
-  <div class="glow-orb" style="top: -10%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%); filter: blur(60px); position: absolute; z-index: -1;"></div>
+
 
   <section class="container section" style="max-width: 1000px; padding-top: 30px;">
     
@@ -285,11 +285,11 @@ if (urlSuccess === "plan_change_scheduled") {
           </div>
           
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
-            <div style="background: var(--color-bg); padding: 12px; border-radius: 12px; text-align: center;">
+            <div style="background: var(--color-bg-subtle); padding: 12px; border-radius: 12px; text-align: center;">
               <div class="muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Invoices</div>
               <div style="font-size: 24px; font-weight: 800; color: var(--color-text); margin-top: 4px;">{invoicesCount}</div>
             </div>
-             <div style="background: var(--color-bg); padding: 12px; border-radius: 12px; text-align: center;">
+             <div style="background: var(--color-bg-subtle); padding: 12px; border-radius: 12px; text-align: center;">
               <div class="muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Next Bill</div>
               <div style="font-size: 24px; font-weight: 800; color: var(--color-text); margin-top: 4px;">{renewalDays ?? "—"}d</div>
             </div>
@@ -338,17 +338,17 @@ if (urlSuccess === "plan_change_scheduled") {
       min-height: 220px;
       display: flex;
       flex-direction: column;
-      box-shadow: var(--shadow-glow);
+      box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
     }
     .status-pill {
       padding: 4px 12px;
       border-radius: 100px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .status-pill.active { background: #22c55e; color: white; box-shadow: 0 0 12px rgba(34, 197, 94, 0.4); }
+    .status-pill.active { background: white; color: var(--color-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .status-pill.inactive { background: rgba(255,255,255,0.2); color: white; }
 
     .invoice-list {
