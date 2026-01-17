@@ -1,6 +1,5 @@
 ---
 import { ViewTransitions } from 'astro:transitions';
-import { getSupabaseServerClient } from "../lib/supabase";
 import Toast from "../components/Toast.astro";
 import LanguageSwitcher from "../components/LanguageSwitcher.astro";
 import { type Locale, defaultLocale, useTranslations, getLocaleFromUrl } from "../i18n";
@@ -15,16 +14,6 @@ const { title = "FastScout" } = Astro.props;
 // Get locale from URL or props
 const locale = Astro.props.locale ?? getLocaleFromUrl(Astro.url);
 const t = useTranslations(locale);
-
-// Auth check - fails gracefully for prerendered pages
-let signedIn = false;
-try {
-  const supabase = getSupabaseServerClient(Astro);
-  const { data } = await supabase.auth.getUser();
-  signedIn = !!data.user;
-} catch {
-  // During prerender, auth check may fail - default to signed out
-}
 
 const pathname = Astro.url.pathname;
 const pathWithoutLocale = pathname.replace(/^\/(fr|en|nl)/, '') || '/';
@@ -308,13 +297,9 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       <nav aria-label="Main navigation">
         <LanguageSwitcher locale={locale} />
         <a href={localePath('/pricing')} aria-current={pathWithoutLocale === '/pricing' ? "page" : undefined}>{t.nav.pricing}</a>
-        {
-          signedIn ? (
-            <a href={localePath('/dashboard')} aria-current={pathWithoutLocale === '/dashboard' ? "page" : undefined}>{t.nav.dashboard}</a>
-          ) : (
-            <a class="btn btn-primary" href={localePath('/auth')}>{t.nav.signIn}</a>
-          )
-        }
+        <!-- Client-side auth-aware nav links -->
+        <a class="btn btn-primary" href={localePath('/auth')} data-nav="guest">{t.nav.signIn}</a>
+        <a href={localePath('/dashboard')} data-nav="user" style="display:none;" aria-current={pathWithoutLocale === '/dashboard' ? "page" : undefined}>{t.nav.dashboard}</a>
       </nav>
     </header>
     <main class="container section">
@@ -364,6 +349,37 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       </div>
     </footer>
     <Toast locale={locale} />
+    
+    <script>
+      // Client-side auth detection for Layout navigation
+      function updateAuthUI() {
+        const hasAuthCookie = document.cookie.includes('sb-');
+        const hasLocalStorage = typeof localStorage !== 'undefined' && 
+          Object.keys(localStorage).some(k => k.startsWith('sb-'));
+        
+        const isSignedIn = hasAuthCookie || hasLocalStorage;
+        
+        // Toggle nav links
+        document.querySelectorAll('[data-nav="guest"]').forEach(el => {
+          (el as HTMLElement).style.display = isSignedIn ? 'none' : '';
+        });
+        document.querySelectorAll('[data-nav="user"]').forEach(el => {
+          (el as HTMLElement).style.display = isSignedIn ? '' : 'none';
+        });
+        
+        // Also toggle CTA buttons (data-cta) if present on page
+        document.querySelectorAll('[data-cta="guest"]').forEach(el => {
+          (el as HTMLElement).style.display = isSignedIn ? 'none' : '';
+        });
+        document.querySelectorAll('[data-cta="user"]').forEach(el => {
+          (el as HTMLElement).style.display = isSignedIn ? '' : 'none';
+        });
+      }
+      
+      // Run on load and after Astro page transitions
+      document.addEventListener('DOMContentLoaded', updateAuthUI);
+      document.addEventListener('astro:page-load', updateAuthUI);
+    </script>
   </body>
 
 </html>

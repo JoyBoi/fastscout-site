@@ -1,0 +1,83 @@
+---
+export const prerender = true;
+
+import Layout from "../../shared/Layout.astro";
+import { locales, getLocaleFromUrl, useTranslations } from "../../i18n";
+
+export function getStaticPaths() {
+  return locales.map(locale => ({ params: { locale } }));
+}
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const localePath = (path: string) => `/${locale}${path}`;
+---
+
+<Layout title="FastScout Chrome Extension" locale={locale}>
+  <div class="glow-orb" style="top: -10%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%); filter: blur(60px); position: absolute; z-index: -1;"></div>
+
+  <section class="container section" style="padding-top: 30px; text-align: center;">
+    <div class="animate-enter">
+        <span class="badge" style="margin-bottom: 24px; display: inline-block;">Official Integration</span>
+        <h1 style="font-size: clamp(40px, 5vw, 64px); font-weight: 800; line-height: 1.1; margin-bottom: 24px; letter-spacing: -1px;">
+          Scout faster with our<br/>
+          <span class="text-gradient">Chrome Extension</span>
+        </h1>
+        <p class="lead" style="margin: 0 auto 40px; max-width: 600px;">
+          Bring the power of FastScout directly into AutoScout24. Get instant Quick Bids and one-click analysis without leaving the listing.
+        </p>
+
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <a href="#" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.1rem;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-1.07 3.97-2.9 5.34z"/></svg>
+                Add to Chrome
+            </a>
+            <a href={localePath("/auth?mode=signup")} class="btn btn-outline" style="padding: 12px 32px; font-size: 1.1rem;" data-cta="guest">
+              Create Free Account
+            </a>
+        </div>
+        
+        <p class="muted" style="margin-top: 16px; font-size: 14px;" data-cta="guest">
+            * A FastScout account is required to use the extension.
+        </p>
+    </div>
+  </section>
+
+  <section class="container section" style="padding-top: 0;">
+    <div class="grid grid-3">
+        <div class="card">
+            <div style="width: 48px; height: 48px; background: var(--color-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">⚡️</div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Quick Bids</h3>
+            <p class="muted">Calculate profitability and generate offer PDFs directly on the car listing page.</p>
+        </div>
+         <div class="card">
+            <div style="width: 48px; height: 48px; background: var(--color-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">🔄</div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Instant Sync</h3>
+            <p class="muted">All your activity is automatically synced to your FastScout dashboard.</p>
+        </div>
+         <div class="card">
+            <div style="width: 48px; height: 48px; background: var(--color-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">🛡️</div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Secure Analysis</h3>
+            <p class="muted">Analyze listings privately without alerting sellers or competitors.</p>
+        </div>
+    </div>
+  </section>
+
+  <script>
+    // Client-side auth detection for prerendered pages
+    function checkAuthState() {
+      const hasAuthCookie = document.cookie.includes('sb-');
+      const hasLocalStorage = typeof localStorage !== 'undefined' && 
+        Object.keys(localStorage).some(k => k.startsWith('sb-'));
+      
+      const isSignedIn = hasAuthCookie || hasLocalStorage;
+      
+      document.querySelectorAll('[data-cta="guest"]').forEach(el => {
+        (el as HTMLElement).style.display = isSignedIn ? 'none' : '';
+      });
+    }
+    
+    document.addEventListener('DOMContentLoaded', checkAuthState);
+    document.addEventListener('astro:page-load', checkAuthState);
+  </script>
+</Layout>
