@@ -1,12 +1,38 @@
 ---
 import { ViewTransitions } from 'astro:transitions';
 import { getSupabaseServerClient } from "../lib/supabase";
-const { title = "FastScout" } = Astro.props as { title?: string };
-const supabase = getSupabaseServerClient(Astro);
-const { data } = await supabase.auth.getUser();
-const signedIn = !!data.user;
+import Toast from "../components/Toast.astro";
+import LanguageSwitcher from "../components/LanguageSwitcher.astro";
+import { type Locale, defaultLocale, useTranslations, getLocaleFromUrl } from "../i18n";
+
+interface Props {
+  title?: string;
+  locale?: Locale;
+}
+
+const { title = "FastScout" } = Astro.props;
+
+// Get locale from URL or props
+const locale = Astro.props.locale ?? getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+
+// Auth check - fails gracefully for prerendered pages
+let signedIn = false;
+try {
+  const supabase = getSupabaseServerClient(Astro);
+  const { data } = await supabase.auth.getUser();
+  signedIn = !!data.user;
+} catch {
+  // During prerender, auth check may fail - default to signed out
+}
+
+const pathname = Astro.url.pathname;
+const pathWithoutLocale = pathname.replace(/^\/(fr|en|nl)/, '') || '/';
+
+// Helper to get localized path
+const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
 ---
-<html lang="en">
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,26 +46,26 @@ const signedIn = !!data.user;
       :root {
         color-scheme: light;
         /* Core Colors - Light Mode */
-        --color-bg: #ffffff; 
+        --color-bg: #ffffff;
         --color-bg-card: #f8fafc;
         --color-text: #0f172a;
         --color-text-muted: #64748b;
-        
+
         /* Brand Gradients */
         --gradient-primary: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
         --gradient-glow: radial-gradient(circle at center, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
-        
+
         /* Accents */
         --color-primary: #2563eb;
         --color-border: #e2e8f0;
         --color-border-hover: #cbd5e1;
-        
+
         /* UI Tokens */
         --radius: 16px;
         --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
         --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
         --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.15);
-        
+
         /* Spacing */
         --space-1: 8px;
         --space-2: 12px;
@@ -52,13 +78,13 @@ const signedIn = !!data.user;
       /* Global Reset & Base */
       * { box-sizing: border-box; }
       html, body { height: 100%; overflow-x: hidden; }
-      
+
       body {
         font-family: 'Outfit', sans-serif;
         margin: 0;
         background-color: var(--color-bg);
         color: var(--color-text);
-        background-image: 
+        background-image:
           radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.05) 0%, transparent 25%),
           radial-gradient(circle at 0% 100%, rgba(124, 58, 237, 0.05) 0%, transparent 25%);
         background-attachment: fixed;
@@ -72,7 +98,7 @@ const signedIn = !!data.user;
         50% { transform: translateY(-10px); }
         100% { transform: translateY(0px); }
       }
-      
+
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
@@ -162,7 +188,7 @@ const signedIn = !!data.user;
         margin: 0 auto;
         padding: 0 var(--space-4);
       }
-      
+
       .section { padding: 120px 0 80px; }
 
       .card {
@@ -183,7 +209,7 @@ const signedIn = !!data.user;
       .card::before {
         display: none; /* Remove glimmer on light mode for cleaner look */
       }
-      
+
       .grid { display: grid; gap: var(--space-4); }
       .grid-2 { grid-template-columns: repeat(2, 1fr); }
       .grid-3 { grid-template-columns: repeat(3, 1fr); }
@@ -201,7 +227,7 @@ const signedIn = !!data.user;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
-      
+
       .status-dot {
         display: inline-block;
         width: 8px;
@@ -240,13 +266,29 @@ const signedIn = !!data.user;
       }
 
       .muted { color: var(--color-text-muted); }
-      
+
       .footer-link {
         color: var(--color-text-muted);
         font-size: 15px;
         transition: color 0.2s;
       }
       .footer-link:hover { color: var(--color-primary); }
+
+      /* Focus styles for accessibility */
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+      }
+
+      /* Remove default focus outline (replaced by focus-visible) */
+      a:focus:not(:focus-visible),
+      button:focus:not(:focus-visible) {
+        outline: none;
+      }
 
       @media (max-width: 768px) {
         .grid-2, .grid-3 { grid-template-columns: 1fr; }
@@ -258,18 +300,19 @@ const signedIn = !!data.user;
   <body>
     <header>
       <div>
-        <a class="logo" href="/">
+        <a class="logo" href={localePath('/')}>
           <img src="/logo.png" alt="FastScout Logo" style="width: 32px; height: 32px;" />
           FastScout
         </a>
       </div>
-      <nav>
-        <a href="/pricing">Pricing</a>
+      <nav aria-label="Main navigation">
+        <LanguageSwitcher locale={locale} />
+        <a href={localePath('/pricing')} aria-current={pathWithoutLocale === '/pricing' ? "page" : undefined}>{t.nav.pricing}</a>
         {
           signedIn ? (
-            <a href="/dashboard">Dashboard</a>
+            <a href={localePath('/dashboard')} aria-current={pathWithoutLocale === '/dashboard' ? "page" : undefined}>{t.nav.dashboard}</a>
           ) : (
-            <a class="btn btn-primary" href="/auth">Sign In</a>
+            <a class="btn btn-primary" href={localePath('/auth')}>{t.nav.signIn}</a>
           )
         }
       </nav>
@@ -283,43 +326,44 @@ const signedIn = !!data.user;
         <div class="grid grid-3" style="margin-bottom: 60px;">
           <!-- Brand -->
           <div>
-            <a class="logo" href="/" style="margin-bottom: 16px; display:inline-flex;">
+            <a class="logo" href={localePath('/')} style="margin-bottom: 16px; display:inline-flex;">
               <img src="/logo.png" alt="FastScout Logo" style="width: 32px; height: 32px;" />
               FastScout
             </a>
             <p class="muted" style="max-width: 280px; line-height: 1.6;">
-              Surf faster. Work smarter.<br>
-              The essential tool for automotive professionals.
+              {t.footer.tagline}<br>
+              {t.footer.description}
             </p>
           </div>
 
           <!-- Product -->
           <div>
-            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 16px;">Product</h4>
+            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 16px;">{t.footer.product}</h4>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-              <a href="/pricing" class="footer-link">Pricing</a>
-              <a href="/dashboard" class="footer-link">Dashboard</a>
-              <a href="/extension" class="footer-link">Chrome Extension</a>
+              <a href={localePath('/pricing')} class="footer-link">{t.nav.pricing}</a>
+              <a href={localePath('/dashboard')} class="footer-link">{t.nav.dashboard}</a>
+              <a href={localePath('/extension')} class="footer-link">{t.footer.extension}</a>
             </div>
           </div>
 
           <!-- Resources -->
           <div>
-            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 16px;">Resources</h4>
+            <h4 style="font-weight: 700; margin-bottom: 20px; font-size: 16px;">{t.footer.resources}</h4>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-              <a href="/docs" class="footer-link">Documentation</a>
-              <a href="/contact" class="footer-link">Support</a>
-              <a href="/terms" class="footer-link">Terms of Service</a>
-              <a href="/privacy" class="footer-link">Privacy Policy</a>
+              <a href={localePath('/docs')} class="footer-link">{t.footer.documentation}</a>
+              <a href={localePath('/contact')} class="footer-link">{t.footer.support}</a>
+              <a href={localePath('/terms')} class="footer-link">{t.footer.terms}</a>
+              <a href={localePath('/privacy')} class="footer-link">{t.footer.privacy}</a>
             </div>
           </div>
         </div>
 
         <div style="border-top: 1px solid var(--color-border); padding-top: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-          <p class="muted" style="font-size: 14px;">&copy; {new Date().getFullYear()} FastScout. All rights reserved.</p>
+          <p class="muted" style="font-size: 14px;">&copy; {new Date().getFullYear()} FastScout. {t.footer.copyright}</p>
         </div>
       </div>
     </footer>
+    <Toast locale={locale} />
   </body>
-  
+
 </html>

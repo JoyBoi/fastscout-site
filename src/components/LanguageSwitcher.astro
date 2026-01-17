@@ -1,0 +1,58 @@
+---
+import type { Locale } from "../i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const currentPath = Astro.url.pathname.replace(/^\/(fr|en|nl)/, '') || '/';
+
+const languages = [
+  { code: 'fr' as const, label: 'FR' },
+  { code: 'en' as const, label: 'EN' },
+  { code: 'nl' as const, label: 'NL' },
+];
+---
+
+<div class="lang-switcher">
+  {languages.map(({ code, label }) => (
+    <a
+      href={`/${code}${currentPath === '/' ? '' : currentPath}`}
+      class:list={['lang-link', { active: code === locale }]}
+      aria-current={code === locale ? 'true' : undefined}
+    >
+      {label}
+    </a>
+  ))}
+</div>
+
+<style>
+  .lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 100px;
+  }
+
+  .lang-link {
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    border-radius: 100px;
+    transition: all 0.2s;
+  }
+
+  .lang-link:hover {
+    color: var(--color-text);
+  }
+
+  .lang-link.active {
+    background: white;
+    color: var(--color-text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+</style>

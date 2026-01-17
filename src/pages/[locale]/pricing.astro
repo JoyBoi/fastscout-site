@@ -1,10 +1,17 @@
 ---
 export const prerender = false;
 
-import Layout from "../shared/Layout.astro";
-import LoadingButton from "../components/LoadingButton.astro";
-import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../lib/stripe";
-import { getSupabaseServerClient } from "../lib/supabase";
+import Layout from "../../shared/Layout.astro";
+import LoadingButton from "../../components/LoadingButton.astro";
+import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
+import { getSupabaseServerClient } from "../../lib/supabase";
+import { locales, getLocaleFromUrl, useTranslations } from "../../i18n";
+
+
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const localePath = (path: string) => `/${locale}${path}`;
 
 let monthlyId = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
 const yearlyId = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
@@ -16,14 +23,13 @@ const userId = userData.user?.id as string | undefined;
 const userEmail = userData.user?.email as string | undefined;
 const urlError = new URL(Astro.request.url).searchParams.get("error");
 let errorBanner: string | null = null;
-if (urlError === "rate_limited") errorBanner = "Too many requests. Try again in a minute.";
-else if (urlError === "checkout_failed") errorBanner = "Checkout failed. Please try again.";
-else if (urlError === "missing_price_id") errorBanner = "Price configuration missing.";
-else if (urlError === "already_subscribed") errorBanner = "You already have an active subscription.";
+if (urlError === "rate_limited") errorBanner = t.pricing.errors.rateLimited;
+else if (urlError === "checkout_failed") errorBanner = t.pricing.errors.checkoutFailed;
+else if (urlError === "missing_price_id") errorBanner = t.pricing.errors.missingPrice;
+else if (urlError === "already_subscribed") errorBanner = t.pricing.errors.alreadySubscribed;
 let subActive = false;
 let subPriceId: string | undefined;
 
-// Fetch subscription_status and billing_customers in parallel
 const [statusResult, billingResult] = await Promise.all([
   userId
     ? supabase.from("subscription_status").select("active, price_id").eq("user_id", userId).maybeSingle()
@@ -41,7 +47,6 @@ if (status) {
   subPriceId = status.price_id ?? undefined;
 }
 
-// Only call Stripe if DB says not active
 if (!subActive && userEmail && userId) {
   const customerId = billingMap?.stripe_customer_id as string | undefined;
   if (customerId) {
@@ -55,13 +60,11 @@ if (!subActive && userEmail && userId) {
   }
 }
 
-// Use env vars for price amounts (primary), Stripe API as fallback
 let monthlyAmount = parseInt(import.meta.env.STRIPE_PRICE_MONTHLY_AMOUNT ?? "0") || 0;
 let yearlyAmount = parseInt(import.meta.env.STRIPE_PRICE_YEARLY_AMOUNT ?? "0") || 0;
 let monthlyCurrency = (import.meta.env.STRIPE_PRICE_CURRENCY ?? "USD").toUpperCase();
 let yearlyCurrency = monthlyCurrency;
 
-// Only fetch from Stripe if env vars not set
 if (!monthlyAmount || !yearlyAmount) {
   try {
     const pricePromises: Promise<void>[] = [];
@@ -85,34 +88,33 @@ if (!monthlyAmount || !yearlyAmount) {
   } catch {}
 }
 
-// Default fallbacks
 if (!monthlyAmount) monthlyAmount = 500;
 if (!yearlyAmount) yearlyAmount = 5000;
 const monthlyDisplay = `$${(monthlyAmount / 100).toFixed(0)}/mo`;
 const yearlyDisplay = `$${(yearlyAmount / 100).toFixed(0)}/yr`;
 ---
-<Layout title="Pricing">
+<Layout title={t.pricing.title} locale={locale}>
   <section style="max-width: 900px; margin: 0 auto;">
     <div style="text-align: center; margin-bottom: 60px;">
-      <h2 style="font-size: 3rem; margin-bottom: 16px;">Simple Pricing</h2>
-      <p class="lead" style="max-width: 500px; margin: 0 auto;">Transparent pricing for professionals. Choose the plan that fits your workflow.</p>
+      <h2 style="font-size: 3rem; margin-bottom: 16px;">{t.pricing.title}</h2>
+      <p class="lead" style="max-width: 500px; margin: 0 auto;">{t.pricing.subtitle}</p>
     </div>
 
     <style is:inline>
-      .pricing-grid { 
-        display: grid; 
-        grid-template-columns: repeat(2, 1fr); 
-        gap: 32px; 
+      .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 32px;
         max-width: 800px;
         margin: 0 auto;
       }
-      .plan { 
+      .plan {
         padding: 40px;
         display: flex;
         flex-direction: column;
         height: 100%;
       }
-      .plan--featured { 
+      .plan--featured {
         border: 2px solid transparent;
         background: linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box,
                     var(--gradient-primary) border-box;
@@ -122,22 +124,22 @@ const yearlyDisplay = `$${(yearlyAmount / 100).toFixed(0)}/yr`;
       .plan-header { margin-bottom: 32px; }
       .price-tag { font-size: 42px; font-weight: 800; color: var(--color-text); line-height: 1; }
       .price-period { font-size: 16px; color: var(--color-text-muted); font-weight: 500; }
-      
+
       .feature-list { margin: 32px 0; flex-grow: 1; }
       .feature-list li { margin-bottom: 16px; font-size: 16px; }
-      
+
       @media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; } }
     </style>
 
     {
       errorBanner ? (
         <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 12%, transparent); margin-bottom:32px; text-align:center">
-          <strong style="color:#ef4444">Error</strong>
+          <strong style="color:#ef4444">{t.common.error}</strong>
           <p class="lead" style="margin-top:6px">{errorBanner}</p>
           {
             urlError === "already_subscribed" ? (
               <div style="margin-top:10px">
-                <a class="btn" href="/dashboard">Go to dashboard</a>
+                <a class="btn" href={localePath('/dashboard')}>{t.nav.dashboard}</a>
               </div>
             ) : null
           }
@@ -149,35 +151,37 @@ const yearlyDisplay = `$${(yearlyAmount / 100).toFixed(0)}/yr`;
       <!-- Monthly Plan -->
       <div class="card plan">
         <div class="plan-header">
-          <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px;">Monthly</h3>
+          <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px;">{t.pricing.monthly.name}</h3>
           <div style="display:flex; align-items:baseline; gap:4px">
             <span class="price-tag">{monthlyDisplay}</span>
           </div>
-          <p class="muted" style="margin-top: 8px;">Flexible access, cancel anytime.</p>
+          <p class="muted" style="margin-top: 8px;">{t.pricing.monthly.description}</p>
         </div>
-        
+
         <ul class="feature-list">
-          <li>Full Dashboard Access</li>
-          <li>Unlimited Quick Bids</li>
-          <li>Chrome Extension</li>
-          <li>Standard Support</li>
+          <li>{t.pricing.features.dashboard}</li>
+          <li>{t.pricing.features.quickBids}</li>
+          <li>{t.pricing.features.extension}</li>
+          <li>{t.pricing.features.support}</li>
         </ul>
 
         <div style="margin-top: auto;">
         {
           subActive ? (
             subPriceId === monthlyId ? (
-              <button class="btn btn-outline" style="width: 100%;" disabled>Current Plan</button>
+              <button class="btn btn-outline" style="width: 100%;" disabled>{t.pricing.cta.currentPlan}</button>
             ) : (
               <form action="/api/change-plan" method="POST">
                 <input type="hidden" name="plan" value="monthly" />
-                <LoadingButton variant="outline" style="width: 100%;">Switch to Monthly</LoadingButton>
+                <input type="hidden" name="locale" value={locale} />
+                <LoadingButton variant="outline" style="width: 100%;">{t.pricing.cta.switchTo} {t.pricing.monthly.name}</LoadingButton>
               </form>
             )
           ) : (
             <form action="/api/checkout" method="POST">
               <input type="hidden" name="plan" value="monthly" />
-              <LoadingButton variant="outline" style="width: 100%;">Choose Monthly</LoadingButton>
+              <input type="hidden" name="locale" value={locale} />
+              <LoadingButton variant="outline" style="width: 100%;">{t.pricing.cta.choose} {t.pricing.monthly.name}</LoadingButton>
             </form>
           )
         }
@@ -188,37 +192,39 @@ const yearlyDisplay = `$${(yearlyAmount / 100).toFixed(0)}/yr`;
       <div class="card plan plan--featured">
         <div class="plan-header">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-            <h3 style="font-size: 20px; font-weight: 600; margin:0;">Annual</h3>
-            <span class="badge">Best Value</span>
+            <h3 style="font-size: 20px; font-weight: 600; margin:0;">{t.pricing.annual.name}</h3>
+            <span class="badge">{t.pricing.annual.badge}</span>
           </div>
           <div style="display:flex; align-items:baseline; gap:4px">
             <span class="price-tag">{yearlyDisplay}</span>
           </div>
-          <p class="muted" style="margin-top: 8px;">Commit to growth & save 17%.</p>
+          <p class="muted" style="margin-top: 8px;">{t.pricing.annual.description}</p>
         </div>
 
         <ul class="feature-list">
-          <li><strong>Everything in Monthly</strong></li>
-          <li>Priority Support</li>
-          <li>Early Access to Features</li>
-          <li>Dedicated Account Review</li>
+          <li><strong>{t.pricing.features.everything}</strong></li>
+          <li>{t.pricing.features.priority}</li>
+          <li>{t.pricing.features.earlyAccess}</li>
+          <li>{t.pricing.features.accountReview}</li>
         </ul>
 
         <div style="margin-top: auto;">
         {
           subActive ? (
             subPriceId === yearlyId ? (
-              <button class="btn btn-primary" style="width: 100%;" disabled>Current Plan</button>
+              <button class="btn btn-primary" style="width: 100%;" disabled>{t.pricing.cta.currentPlan}</button>
             ) : (
               <form action="/api/change-plan" method="POST">
                 <input type="hidden" name="plan" value="annual" />
-                <LoadingButton variant="primary" style="width: 100%;">Switch to Annual</LoadingButton>
+                <input type="hidden" name="locale" value={locale} />
+                <LoadingButton variant="primary" style="width: 100%;">{t.pricing.cta.switchTo} {t.pricing.annual.name}</LoadingButton>
               </form>
             )
           ) : (
             <form action="/api/checkout" method="POST">
               <input type="hidden" name="plan" value="annual" />
-              <LoadingButton variant="primary" style="width: 100%;">Choose Annual</LoadingButton>
+              <input type="hidden" name="locale" value={locale} />
+              <LoadingButton variant="primary" style="width: 100%;">{t.pricing.cta.choose} {t.pricing.annual.name}</LoadingButton>
             </form>
           )
         }
@@ -227,15 +233,15 @@ const yearlyDisplay = `$${(yearlyAmount / 100).toFixed(0)}/yr`;
     </div>
 
     <div class="card" style="margin-top: 60px; text-align: left;">
-      <h3 style="margin-bottom: 24px;">Frequently Asked Questions</h3>
+      <h3 style="margin-bottom: 24px;">{t.pricing.faq.title}</h3>
       <div class="grid grid-2">
         <div>
-          <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Can I cancel anytime?</h4>
-          <p class="muted" style="font-size: 15px; line-height: 1.6;">Yes, absolutely. You can cancel your subscription at any time from your dashboard settings. Your access will continue until the end of your billing period.</p>
+          <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">{t.pricing.faq.cancel.question}</h4>
+          <p class="muted" style="font-size: 15px; line-height: 1.6;">{t.pricing.faq.cancel.answer}</p>
         </div>
         <div>
-          <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">How are invoices handled?</h4>
-          <p class="muted" style="font-size: 15px; line-height: 1.6;">Invoices are automatically generated and emailed to you. You can also view and download past invoices directly from your dashboard.</p>
+          <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">{t.pricing.faq.invoices.question}</h4>
+          <p class="muted" style="font-size: 15px; line-height: 1.6;">{t.pricing.faq.invoices.answer}</p>
         </div>
       </div>
     </div>

@@ -1,8 +1,13 @@
 ---
 export const prerender = false;
 
-import Layout from "../../shared/Layout.astro";
-import { getSupabaseServerClient } from "../../lib/supabase";
+import Layout from "../../../shared/Layout.astro";
+import { getSupabaseServerClient } from "../../../lib/supabase";
+import { getLocaleFromUrl, useTranslations } from "../../../i18n";
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const localePath = (path: string) => `/${locale}${path}`;
 
 const qs = new URL(Astro.request.url).searchParams;
 const error = qs.get("error");
@@ -12,11 +17,10 @@ const isSignup = mode === "signup";
 const supabase = getSupabaseServerClient(Astro);
 const { data } = await supabase.auth.getUser();
 if (data.user) {
-  const siteUrl = import.meta.env.SITE_URL as string;
-  return Astro.redirect(`${siteUrl}/dashboard`);
+  return Astro.redirect(localePath("/dashboard"));
 }
 ---
-<Layout title="Sign in to FastScout">
+<Layout title="Sign in to FastScout" locale={locale}>
   <section class="grid fade-in" style="max-width:720px; margin:0 auto">
     <h2 style="text-align:center">Welcome</h2>
     { error ? (
@@ -56,6 +60,7 @@ if (data.user) {
             style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--color-border); background: color-mix(in oklab, var(--color-bg) 92%, #fff)"
           />
         </label>
+        <input type="hidden" name="locale" value={locale} />
         <button class="btn btn-primary" type="submit">{isSignup ? "Sign up" : "Sign in"}</button>
       </form>
       <div class="hero-actions" style="margin-top:12px">
@@ -68,13 +73,13 @@ if (data.user) {
             <>
               Already have an account?
               {" "}
-              <a href="/auth?mode=signin">Sign in</a>
+              <a href={localePath("/auth?mode=signin")}>Sign in</a>
             </>
           ) : (
             <>
               Don&apos;t have an account?
               {" "}
-              <a href="/auth?mode=signup">Create one</a>
+              <a href={localePath("/auth?mode=signup")}>Create one</a>
             </>
           )
         }

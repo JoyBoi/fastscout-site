@@ -1,15 +1,20 @@
 ---
 export const prerender = false;
 
-import Layout from "../shared/Layout.astro";
-import RenewalCountdown from "../components/RenewalCountdown.astro";
-import LoadingButton from "../components/LoadingButton.astro";
-import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../lib/stripe";
-import { getSupabaseServerClient } from "../lib/supabase";
+import Layout from "../../shared/Layout.astro";
+import RenewalCountdown from "../../components/RenewalCountdown.astro";
+import LoadingButton from "../../components/LoadingButton.astro";
+import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
+import { getSupabaseServerClient } from "../../lib/supabase";
+import { getLocaleFromUrl, useTranslations } from "../../i18n";
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const localePath = (path: string) => `/${locale}${path}`;
 
 const supabase = getSupabaseServerClient(Astro);
 const { data } = await supabase.auth.getUser();
-if (!data.user) return Astro.redirect("/auth/signin");
+if (!data.user) return Astro.redirect(localePath("/auth"));
 const userEmail = data.user?.email as string | undefined;
 const userId = data.user?.id as string | undefined;
 
@@ -118,7 +123,7 @@ else if (urlError === "checkout_failed") errorBanner = "Checkout failed. Please 
 else if (urlError === "missing_price_id") errorBanner = "Price configuration missing.";
 else if (urlError === "no_active_subscription") {
   errorBanner = "You do not have an active subscription to change.";
-  errorCtaHref = "/pricing";
+  errorCtaHref = localePath("/pricing");
   errorCtaLabel = "View pricing";
 }
 if (urlSuccess === "plan_change_scheduled") {
@@ -127,11 +132,11 @@ if (urlSuccess === "plan_change_scheduled") {
   successCtaLabel = "Manage billing";
 } else if (urlSuccess === "plan_unchanged") {
   successBanner = "You are already on this plan.";
-  successCtaHref = "/pricing";
+  successCtaHref = localePath("/pricing");
   successCtaLabel = "View other plans";
 }
 ---
-<Layout title="Dashboard">
+<Layout title="Dashboard" locale={locale}>
   <div class="glow-orb" style="top: -10%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%); filter: blur(60px); position: absolute; z-index: -1;"></div>
 
   <section class="container section" style="max-width: 1000px; padding-top: 30px;">
@@ -213,7 +218,7 @@ if (urlSuccess === "plan_change_scheduled") {
               ) : (
                 <div style="display:flex; justify-content: space-between; align-items: center;">
                   <p style="color: rgba(255,255,255,0.8);">Unlock full access to FastScout.</p>
-                  <a class="btn" href="/pricing" style="background: white; color: var(--color-primary); border: none;">Upgrade Plan</a>
+                  <a class="btn" href={localePath("/pricing")} style="background: white; color: var(--color-primary); border: none;">Upgrade Plan</a>
                 </div>
               )
             }

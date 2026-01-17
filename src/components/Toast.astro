@@ -1,6 +1,14 @@
 ---
 // Toast notification component
 // Displays success/error messages from URL params and auto-dismisses
+import { type Locale, defaultLocale, useTranslations } from "../i18n";
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = defaultLocale } = Astro.props;
+const t = useTranslations(locale);
 ---
 <div id="toast-container" aria-live="polite" aria-atomic="true">
   <div id="toast" class="toast" role="alert" hidden>
@@ -11,6 +19,12 @@
     <button class="toast-close" aria-label="Close notification" type="button">&times;</button>
   </div>
 </div>
+
+<!-- Pass translations to client-side script -->
+<script id="toast-translations" type="application/json" set:html={JSON.stringify({
+  errors: t.toast.errors,
+  success: t.toast.success,
+})} />
 
 <style>
   #toast-container {
@@ -142,23 +156,16 @@
 </style>
 
 <script>
-  const errorMessages: Record<string, string> = {
-    rate_limited: "Too many requests. Please try again in a minute.",
-    rate_limit_error: "Rate limit service error. Please retry.",
-    checkout_failed: "Checkout failed. Please try again.",
-    missing_price_id: "Price configuration missing.",
-    already_subscribed: "You already have an active subscription.",
-    no_active_subscription: "You do not have an active subscription.",
-    misconfigured_edge_function: "Billing service is misconfigured.",
-    change_plan_failed: "Failed to change plan. Please try again.",
-  };
-
-  const successMessages: Record<string, string> = {
-    plan_change_scheduled: "Plan change scheduled! It will take effect at your next billing cycle.",
-    plan_unchanged: "You're already on this plan.",
-    subscription_cancelled: "Subscription cancelled successfully.",
-    subscription_reactivated: "Subscription reactivated successfully.",
-  };
+  // Get translations from embedded JSON
+  function getTranslations() {
+    const el = document.getElementById("toast-translations");
+    if (!el) return { errors: {}, success: {} };
+    try {
+      return JSON.parse(el.textContent || "{}");
+    } catch {
+      return { errors: {}, success: {} };
+    }
+  }
 
   function showToast(message: string, type: "success" | "error") {
     const toast = document.getElementById("toast");
@@ -198,6 +205,10 @@
 
   // Check URL params on load
   function checkUrlParams() {
+    const translations = getTranslations();
+    const errorMessages = translations.errors as Record<string, string>;
+    const successMessages = translations.success as Record<string, string>;
+
     const params = new URLSearchParams(window.location.search);
     const error = params.get("error");
     const success = params.get("success");
