@@ -136,6 +136,29 @@ const localePath = (path: string) => `/${locale}${path}`;
     </div>
   </section>
 
+  <!-- Testimonial Section -->
+  <section class="testimonial-section animate-enter">
+    <div class="testimonial-wrapper">
+      <div class="quote-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.2;">
+          <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H15.017C14.4647 8 14.017 8.44772 14.017 9V11C14.017 11.5523 13.5693 12 13.017 12H12.017V5H22.017V15C22.017 18.3137 19.3307 21 16.017 21H14.017ZM5.0166 21L5.0166 18C5.0166 16.8954 5.91203 16 7.0166 16H10.0166C10.5689 16 11.0166 15.5523 11.0166 15V9C11.0166 8.44772 10.5689 8 10.0166 8H6.0166C5.46432 8 5.0166 8.44772 5.0166 9V11C5.0166 11.5523 4.56889 12 4.0166 12H3.0166V5H13.0166V15C13.0166 18.3137 10.3303 21 7.0166 21H5.0166Z" />
+        </svg>
+      </div>
+      <blockquote class="testimonial-quote">
+        "{t.home.testimonial.quote}"
+      </blockquote>
+      <div class="testimonial-author">
+        <div class="author-avatar">
+            <img src="/testimony/MK_MOTOR.png" alt={t.home.testimonial.author} loading="lazy" />
+        </div>
+        <div class="author-info">
+            <cite>{t.home.testimonial.author}</cite>
+            <span class="author-role">{t.home.testimonial.role}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- CTA Section -->
   <section class="cta-section">
     <div class="cta-card">
@@ -635,6 +658,94 @@ const localePath = (path: string) => `/${locale}${path}`;
       .quick-stats {
         flex-wrap: wrap;
       }
+      
+      .testimonial-quote {
+        font-size: 18px !important;
+      }
+    }
+
+    /* Testimonial Section */
+    .testimonial-section {
+      max-width: 1000px;
+      margin: 0 auto 100px;
+      padding: 0 var(--space-4);
+      position: relative;
+    }
+
+    .testimonial-wrapper {
+      text-align: center;
+      background: white;
+      border: 1px solid var(--color-border);
+      border-radius: 24px;
+      padding: 60px 40px;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .testimonial-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 6px;
+        background: var(--gradient-primary);
+    }
+
+    .quote-icon {
+      color: var(--color-primary);
+      margin-bottom: 24px;
+    }
+
+    .testimonial-quote {
+      font-size: 24px;
+      font-weight: 500;
+      line-height: 1.6;
+      color: var(--color-text);
+      margin: 0 auto 40px;
+      max-width: 800px;
+      font-style: italic;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .author-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background: #f1f5f9;
+    }
+
+    .author-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Logos usually need contain, portraits need cover. Assuming logo from filename. */
+      padding: 2px; /* Slight padding for logo */
+      background: white;
+    }
+
+    .author-info {
+      text-align: left;
+    }
+
+    .author-info cite {
+      display: block;
+      font-weight: 700;
+      font-style: normal;
+      color: var(--color-text);
+      font-size: 16px;
+    }
+
+    .author-role {
+      display: block;
+      font-size: 13px;
+      color: var(--color-text-muted);
     }
   </style>
 

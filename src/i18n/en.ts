@@ -3,6 +3,7 @@ export default {
     pricing: "Pricing",
     dashboard: "Dashboard",
     signIn: "Sign In",
+    features: "Features",
   },
   home: {
     badge: "V 2.0 AVAILABLE NOW",
@@ -29,6 +30,11 @@ export default {
         title: "Smart Capture",
         description: "Automatically extracts key details like mileage, first registration, and power to clipboard.",
       },
+    },
+    testimonial: {
+      quote: "Initially, pricing 100 cars on Fastback took me 1.5 hours, about 1 minute per car. Thanks to FastScout, I optimized this to 10-15 seconds per car and gained massive daily efficiency.",
+      author: "Mikail Karaman",
+      role: "Automotive Dealer",
     },
   },
   pricing: {
@@ -149,10 +155,11 @@ export default {
   },
   auth: {
     signIn: "Sign in to FastScout",
+    welcome: "Welcome",
     signUp: "Create your account",
     email: "Email address",
     password: "Password",
-    continueWith: "Or continue with",
+    continueWith: "Continue with",
     google: "Google",
     github: "GitHub",
     noAccount: "Don't have an account?",
@@ -167,14 +174,103 @@ export default {
   terms: {
     title: "Terms of Service",
     lastUpdated: "Last updated",
+    intro: {
+      title: "1. Introduction",
+      content: "Welcome to FastScout. By accessing our website and using our Chrome Extension, you agree to be bound by these Terms of Service.",
+    },
+    use: {
+      title: "2. Use of Service",
+      content: "FastScout provides tools for automotive professionals to analyze vehicle listings. You agree to use the service only for lawful purposes and in accordance with these terms.",
+    },
+    accounts: {
+      title: "3. Accounts",
+      content: "To access certain features, you must create an account. You are responsible for maintaining the confidentiality of your account credentials.",
+    },
+    subs: {
+      title: "4. Subscriptions",
+      content: "Some features require a paid subscription. You will be billed in advance on a recurring and periodic basis (such as monthly or annually).",
+    },
+    term: {
+      title: "5. Termination",
+      content: "We may terminate or suspend access to our service immediately, without prior notice, for any reason whatsoever, including without limitation if you breach the Terms.",
+    },
+    liability: {
+      title: "6. Limitation of Liability",
+      content: "In no event shall FastScout be liable for any indirect, incidental, special, consequential or punitive damages.",
+    },
   },
   privacy: {
     title: "Privacy Policy",
     lastUpdated: "Last updated",
+    collect: {
+      title: "1. Information We Collect",
+      content: "We collect information you provide directly to us, such as when you create an account, subscribe to our service, or contact customer support.",
+    },
+    use: {
+      title: "2. How We Use Your Information",
+      content: "We use the information we collect to provide, maintain, and improve our services, to process your transactions, and to communicate with you.",
+    },
+    extension: {
+      title: "3. Chrome Extension Usage",
+      content: "Our Chrome Extension processes data from vehicle listing pages you visit to provide the service. We do not store your browsing history or transmit vehicle data to our servers unless explicitly saved by you.",
+    },
+    security: {
+      title: "4. Data Security",
+      content: "We implement reasonable security measures to protect your information. However, no method of transmission over the internet is 100% secure.",
+    },
+    thirdParty: {
+      title: "5. Third-Party Services",
+      content: "We may use third-party services (such as Stripe for payments) which may collect and process information about you in accordance with their own privacy policies.",
+    },
+    rights: {
+      title: "6. Your Rights",
+      content: "You have the right to access, correct, or delete your personal information. You can manage most of your data directly within your account settings.",
+    },
   },
   docs: {
     title: "Documentation",
-    description: "Learn how to get the most out of FastScout.",
+    badge: "Help Center",
+    heroTitle1: "How can we",
+    heroTitle2: "help?",
+    lead: "Everything you need to know about using FastScout to find better car deals.",
+    quickLinks: {
+      start: {
+        title: "Getting Started",
+        description: "Install the Chrome extension and set up your account in minutes."
+      },
+      extension: {
+        title: "Chrome Extension",
+        description: "Learn how to use vehicle detection, one-click search, and quick bids."
+      },
+      billing: {
+        title: "Billing & Subscription",
+        description: "Manage your plan, view invoices, and update payment methods."
+      }
+    },
+    faq: {
+      title: "Frequently Asked Questions",
+      q1: {
+        title: "How does the Quick Bid feature work?",
+        content: "When viewing a vehicle on a supported platform (like Auto1 or CarCollect), the FastScout extension injects a bid form directly onto the page. You can enter your amount and submit it without leaving the listing."
+      },
+      q2: {
+        title: "Which platforms are supported?",
+        content: "Currently, we support Auto1, CarCollect, and FastBack Trade. We are constantly working on adding more B2B automotive platforms."
+      },
+      q3: {
+        title: "Is my data secure?",
+        content: "Yes. The extension analyzes the page content locally in your browser. We only store your subscription status and authentication token. No browsing history is sent to our servers."
+      },
+      q4: {
+        title: "Can I share my account?",
+        content: "FastScout accounts are for individual use. If you have a team, please contact us for enterprise team pricing."
+      }
+    },
+    support: {
+      title: "Still need help?",
+      description: "Our support team is available during business hours to assist you.",
+      cta: "Contact Support"
+    }
   },
   contact: {
     title: "Contact Us",
@@ -186,8 +282,48 @@ export default {
   },
   extension: {
     title: "Chrome Extension",
-    description: "Get the FastScout browser extension for quick access to all features.",
-    install: "Install Extension",
+    badge: "Chrome Extension v3.0",
+    bridge: "Bridge",
+    lead: "Instantly search for comparable vehicles on AutoScout24 directly from Auto1, CarCollect, and FastBack Trade.",
+    ctaAdd: "Add to Chrome",
+    ctaAccount: "Create Free Account",
+    req: "* A FastScout account is required to use the extension.",
+    platforms: {
+      title: "Works where you work"
+    },
+    features: {
+      detection: {
+        title: "Vehicle Detection",
+        description: "Automatically detects vehicle specs (Brand, Model, Version, Mileage, etc.) from the trading page."
+      },
+      search: {
+        title: "One-Click Search",
+        description: "Instantly opens AutoScout24 with pre-filled filters matching the vehicle you're viewing."
+      },
+      settings: {
+        title: "Smart Settings",
+        description: "Adjust mileage buffers (Standard vs Strict mode) to control how broad your search should be."
+      }
+    },
+    steps: {
+      title: "How It Works",
+      step1: {
+        title: "Install & Sign In",
+        description: "Add the extension to Chrome and sign in with your FastScout account."
+      },
+      step2: {
+        title: "Browse Listings",
+        description: "Visit a vehicle page on Auto1, CarCollect, or FastBack Trade."
+      },
+      step3: {
+        title: "One Click",
+        description: "Click the floating FastScout button to instantly find matches on AutoScout24."
+      },
+      step4: {
+        title: "Quick Bid",
+        description: "Place bids directly on the platform without leaving the vehicle page."
+      }
+    }
   },
   notFound: {
     title: "Page Not Found",
@@ -203,5 +339,6 @@ export default {
     save: "Save",
     close: "Close",
     actionRequired: "Action Required",
+    notice: "Notice",
   },
 } as const;

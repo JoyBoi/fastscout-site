@@ -17,26 +17,26 @@ const localePath = (path: string) => `/${locale}${path}`;
   <!-- Hero Section -->
   <section class="container section" style="padding-top: 60px; text-align: center;">
     <div class="animate-enter">
-        <span class="badge" style="margin-bottom: 24px; display: inline-block;">Chrome Extension v3.0</span>
+        <span class="badge" style="margin-bottom: 24px; display: inline-block;">{t.extension.badge}</span>
         <h1 style="font-size: clamp(40px, 5vw, 64px); font-weight: 800; line-height: 1.1; margin-bottom: 24px; letter-spacing: -1px;">
-          FastScout <span class="text-gradient">Bridge</span>
+          FastScout <span class="text-gradient">{t.extension.bridge}</span>
         </h1>
         <p class="lead" style="margin: 0 auto 40px; max-width: 600px;">
-          Instantly search for comparable vehicles on AutoScout24 directly from Auto1, CarCollect, and FastBack Trade.
+          {t.extension.lead}
         </p>
 
         <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
             <a href="#" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.1rem;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-1.07 3.97-2.9 5.34z"/></svg>
-                Add to Chrome
+                {t.extension.ctaAdd}
             </a>
             <a href={localePath("/auth?mode=signup")} class="btn btn-outline" style="padding: 12px 32px; font-size: 1.1rem;" data-cta="guest">
-              Create Free Account
+              {t.extension.ctaAccount}
             </a>
         </div>
         
         <p class="muted" style="margin-top: 16px; font-size: 14px;" data-cta="guest">
-            * A FastScout account is required to use the extension.
+            {t.extension.req}
         </p>
     </div>
   </section>
@@ -44,7 +44,7 @@ const localePath = (path: string) => `/${locale}${path}`;
   <!-- Supported Platforms -->
   <section class="container section">
     <div style="text-align: center; margin-bottom: 40px;">
-      <h2 style="font-size: 24px; font-weight: 700;">Works where you work</h2>
+      <h2 style="font-size: 24px; font-weight: 700;">{t.extension.platforms.title}</h2>
     </div>
     <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; opacity: 0.7;">
       <div style="font-weight: 700; font-size: 20px; color: var(--color-text);">Auto1</div>
@@ -58,50 +58,49 @@ const localePath = (path: string) => `/${locale}${path}`;
     <div class="grid grid-3">
         <div class="card">
             <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">👀</div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Vehicle Detection</h3>
-            <p class="muted">Automatically detects vehicle specs (Brand, Model, Version, Mileage, etc.) from the trading page.</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">{t.extension.features.detection.title}</h3>
+            <p class="muted">{t.extension.features.detection.description}</p>
         </div>
          <div class="card">
             <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">🚀</div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">One-Click Search</h3>
-            <p class="muted">Instantly opens AutoScout24 with pre-filled filters matching the vehicle you're viewing.</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">{t.extension.features.search.title}</h3>
+            <p class="muted">{t.extension.features.search.description}</p>
         </div>
          <div class="card">
             <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">⚙️</div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Smart Settings</h3>
-            <p class="muted">Adjust mileage buffers (Standard vs Strict mode) to control how broad your search should be.</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">{t.extension.features.settings.title}</h3>
+            <p class="muted">{t.extension.features.settings.description}</p>
         </div>
     </div>
   </section>
 
   <!-- How It Works -->
   <section class="container section">
-    <h2 style="text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 60px;">How It Works</h2>
+    <h2 style="text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 60px;">{t.extension.steps.title}</h2>
     
     <div class="steps-grid">
       <div class="step-card">
         <div class="step-number">1</div>
-        <h3>Install & Sign In</h3>
-        <p class="muted">Add the extension to Chrome and sign in with your FastScout account.</p>
+        <h3>{t.extension.steps.step1.title}</h3>
+        <p class="muted">{t.extension.steps.step1.description}</p>
       </div>
       <div class="step-card">
         <div class="step-number">2</div>
-        <h3>Browse Listings</h3>
-        <p class="muted">Visit a vehicle page on Auto1, CarCollect, or FastBack Trade.</p>
+        <h3>{t.extension.steps.step2.title}</h3>
+        <p class="muted">{t.extension.steps.step2.description}</p>
       </div>
       <div class="step-card">
         <div class="step-number">3</div>
-        <h3>One Click</h3>
-        <p class="muted">Click the floating FastScout button to instantly find matches on AutoScout24.</p>
+        <h3>{t.extension.steps.step3.title}</h3>
+        <p class="muted">{t.extension.steps.step3.description}</p>
       </div>
       <div class="step-card">
         <div class="step-number">4</div>
-        <h3>Quick Bid</h3>
-        <p class="muted">Place bids directly on the platform without leaving the vehicle page.</p>
+        <h3>{t.extension.steps.step4.title}</h3>
+        <p class="muted">{t.extension.steps.step4.description}</p>
       </div>
     </div>
   </section>
-
   <style>
     .steps-grid {
       display: grid;

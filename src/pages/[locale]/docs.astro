@@ -16,12 +16,12 @@ const localePath = (path: string) => `/${locale}${path}`;
 <Layout title="Documentation" locale={locale}>
   <section class="container section" style="padding-top: 60px;">
     <div style="text-align: center; margin-bottom: 60px;">
-        <span class="badge" style="margin-bottom: 16px;">Help Center</span>
+        <span class="badge" style="margin-bottom: 16px;">{t.docs.badge}</span>
         <h1 style="font-size: clamp(40px, 5vw, 64px); font-weight: 800; opacity: 1; letter-spacing: -1px; margin-bottom: 24px;">
-          How can we <span class="text-gradient">help?</span>
+          {t.docs.heroTitle1} <span class="text-gradient">{t.docs.heroTitle2}</span>
         </h1>
         <p class="lead" style="max-width: 600px; margin: 0 auto;">
-          Everything you need to know about using FastScout to find better car deals.
+          {t.docs.lead}
         </p>
     </div>
 
@@ -29,50 +29,50 @@ const localePath = (path: string) => `/${locale}${path}`;
     <div class="grid grid-3" style="margin-bottom: 80px;">
         <a href={localePath('/extension')} class="card docs-card">
             <div class="icon-box">🚀</div>
-            <h3>Getting Started</h3>
-            <p class="muted">Install the Chrome extension and set up your account in minutes.</p>
+            <h3>{t.docs.quickLinks.start.title}</h3>
+            <p class="muted">{t.docs.quickLinks.start.description}</p>
         </a>
         <a href={localePath('/extension')} class="card docs-card">
             <div class="icon-box">🧩</div>
-            <h3>Chrome Extension</h3>
-            <p class="muted">Learn how to use vehicle detection, one-click search, and quick bids.</p>
+            <h3>{t.docs.quickLinks.extension.title}</h3>
+            <p class="muted">{t.docs.quickLinks.extension.description}</p>
         </a>
         <a href={localePath('/pricing')} class="card docs-card">
             <div class="icon-box">💳</div>
-            <h3>Billing & Subscription</h3>
-            <p class="muted">Manage your plan, view invoices, and update payment methods.</p>
+            <h3>{t.docs.quickLinks.billing.title}</h3>
+            <p class="muted">{t.docs.quickLinks.billing.description}</p>
         </a>
     </div>
 
     <!-- FAQ Section -->
     <div style="max-width: 800px; margin: 0 auto;">
-        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 40px; text-align: center;">Frequently Asked Questions</h2>
+        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 40px; text-align: center;">{t.docs.faq.title}</h2>
         
         <div class="faq-item">
-            <h4>How does the Quick Bid feature work?</h4>
-            <p class="muted">When viewing a vehicle on a supported platform (like Auto1 or CarCollect), the FastScout extension injects a bid form directly onto the page. You can enter your amount and submit it without leaving the listing.</p>
+            <h4>{t.docs.faq.q1.title}</h4>
+            <p class="muted">{t.docs.faq.q1.content}</p>
         </div>
 
         <div class="faq-item">
-            <h4>Which platforms are supported?</h4>
-            <p class="muted">Currently, we support Auto1, CarCollect, and FastBack Trade. We are constantly working on adding more B2B automotive platforms.</p>
+            <h4>{t.docs.faq.q2.title}</h4>
+            <p class="muted">{t.docs.faq.q2.content}</p>
         </div>
 
         <div class="faq-item">
-            <h4>Is my data secure?</h4>
-            <p class="muted">Yes. The extension analyzes the page content locally in your browser. We only store your subscription status and authentication token. No browsing history is sent to our servers.</p>
+            <h4>{t.docs.faq.q3.title}</h4>
+            <p class="muted">{t.docs.faq.q3.content}</p>
         </div>
 
         <div class="faq-item">
-            <h4>Can I share my account?</h4>
-            <p class="muted">FastScout accounts are for individual use. If you have a team, please contact us for enterprise team pricing.</p>
+            <h4>{t.docs.faq.q4.title}</h4>
+            <p class="muted">{t.docs.faq.q4.content}</p>
         </div>
     </div>
     
     <div style="margin-top: 80px; padding: 40px; background: var(--color-bg-subtle); border-radius: 20px; text-align: center; border: 1px solid var(--color-border);">
-        <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Still need help?</h3>
-        <p class="muted" style="margin-bottom: 24px;">Our support team is available during business hours to assist you.</p>
-        <a href="mailto:support@fastscout.app" class="btn btn-primary">Contact Support</a>
+        <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">{t.docs.support.title}</h3>
+        <p class="muted" style="margin-bottom: 24px;">{t.docs.support.description}</p>
+        <a href="mailto:support@fastscout.app" class="btn btn-primary">{t.docs.support.cta}</a>
     </div>
 
   </section>
