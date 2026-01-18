@@ -1,0 +1,64 @@
+---
+export const prerender = true;
+
+import Layout from "../../shared/Layout.astro";
+import { locales, getLocaleFromUrl, useTranslations } from "../../i18n";
+
+export function getStaticPaths() {
+  return locales.map(locale => ({ params: { locale } }));
+}
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const localePath = (path: string) => `/${locale}${path}`;
+---
+
+<Layout title="Privacy Policy" locale={locale}>
+  <section class="container section" style="max-width: 800px; padding-top: 60px;">
+    <h1 style="font-size: 3rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 40px; text-align: center;">Privacy Policy</h1>
+    
+    <div class="card" style="padding: 40px;">
+        <div class="prose">
+            <p class="lead">Last updated: {new Date().toLocaleDateString()}</p>
+            
+            <h3>1. Information We Collect</h3>
+            <p>We collect information you provide directly to us, such as when you create an account, subscribe to our service, or contact customer support.</p>
+            
+            <h3>2. How We Use Your Information</h3>
+            <p>We use the information we collect to provide, maintain, and improve our services, to process your transactions, and to communicate with you.</p>
+            
+            <h3>3. Chrome Extension Usage</h3>
+            <p>Our Chrome Extension processes data from vehicle listing pages you visit to provide the service. We do not store your browsing history or transmit vehicle data to our servers unless explicitly saved by you.</p>
+            
+            <h3>4. Data Security</h3>
+            <p>We implement reasonable security measures to protect your information. However, no method of transmission over the internet is 100% secure.</p>
+            
+            <h3>5. Third-Party Services</h3>
+            <p>We may use third-party services (such as Stripe for payments) which may collect and process information about you in accordance with their own privacy policies.</p>
+            
+            <h3>6. Your Rights</h3>
+            <p>You have the right to access, correct, or delete your personal information. You can manage most of your data directly within your account settings.</p>
+        </div>
+    </div>
+  </section>
+
+  <style>
+    .prose h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: var(--color-text);
+    }
+    .prose p {
+        color: var(--color-text-muted);
+        line-height: 1.7;
+        margin-bottom: 1rem;
+    }
+    .lead {
+        font-size: 1.1rem;
+        color: var(--color-text-muted);
+        margin-bottom: 2rem;
+    }
+  </style>
+</Layout>

@@ -13,18 +13,16 @@ const t = useTranslations(locale);
 const localePath = (path: string) => `/${locale}${path}`;
 ---
 
-<Layout title="FastScout Chrome Extension" locale={locale}>
-
-
-  <section class="container section" style="padding-top: 30px; text-align: center;">
+<Layout title="FastScout Bridge" locale={locale}>
+  <!-- Hero Section -->
+  <section class="container section" style="padding-top: 60px; text-align: center;">
     <div class="animate-enter">
-        <span class="badge" style="margin-bottom: 24px; display: inline-block;">Official Integration</span>
+        <span class="badge" style="margin-bottom: 24px; display: inline-block;">Chrome Extension v3.0</span>
         <h1 style="font-size: clamp(40px, 5vw, 64px); font-weight: 800; line-height: 1.1; margin-bottom: 24px; letter-spacing: -1px;">
-          Scout faster with our<br/>
-          <span class="text-gradient">Chrome Extension</span>
+          FastScout <span class="text-gradient">Bridge</span>
         </h1>
         <p class="lead" style="margin: 0 auto 40px; max-width: 600px;">
-          Bring the power of FastScout directly into AutoScout24. Get instant Quick Bids and one-click analysis without leaving the listing.
+          Instantly search for comparable vehicles on AutoScout24 directly from Auto1, CarCollect, and FastBack Trade.
         </p>
 
         <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
@@ -43,25 +41,113 @@ const localePath = (path: string) => `/${locale}${path}`;
     </div>
   </section>
 
-  <section class="container section" style="padding-top: 0;">
+  <!-- Supported Platforms -->
+  <section class="container section">
+    <div style="text-align: center; margin-bottom: 40px;">
+      <h2 style="font-size: 24px; font-weight: 700;">Works where you work</h2>
+    </div>
+    <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; opacity: 0.7;">
+      <div style="font-weight: 700; font-size: 20px; color: var(--color-text);">Auto1</div>
+      <div style="font-weight: 700; font-size: 20px; color: var(--color-text);">CarCollect</div>
+      <div style="font-weight: 700; font-size: 20px; color: var(--color-text);">FastBack Trade</div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section class="container section">
     <div class="grid grid-3">
         <div class="card">
-            <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">⚡️</div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Quick Bids</h3>
-            <p class="muted">Calculate profitability and generate offer PDFs directly on the car listing page.</p>
+            <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">👀</div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Vehicle Detection</h3>
+            <p class="muted">Automatically detects vehicle specs (Brand, Model, Version, Mileage, etc.) from the trading page.</p>
         </div>
          <div class="card">
-            <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">🔄</div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Instant Sync</h3>
-            <p class="muted">All your activity is automatically synced to your FastScout dashboard.</p>
+            <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">🚀</div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">One-Click Search</h3>
+            <p class="muted">Instantly opens AutoScout24 with pre-filled filters matching the vehicle you're viewing.</p>
         </div>
          <div class="card">
-            <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">🛡️</div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Secure Analysis</h3>
-            <p class="muted">Analyze listings privately without alerting sellers or competitors.</p>
+            <div style="width: 48px; height: 48px; background: #F1F5F9; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">⚙️</div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Smart Settings</h3>
+            <p class="muted">Adjust mileage buffers (Standard vs Strict mode) to control how broad your search should be.</p>
         </div>
     </div>
   </section>
+
+  <!-- How It Works -->
+  <section class="container section">
+    <h2 style="text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 60px;">How It Works</h2>
+    
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Install & Sign In</h3>
+        <p class="muted">Add the extension to Chrome and sign in with your FastScout account.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>Browse Listings</h3>
+        <p class="muted">Visit a vehicle page on Auto1, CarCollect, or FastBack Trade.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>One Click</h3>
+        <p class="muted">Click the floating FastScout button to instantly find matches on AutoScout24.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h3>Quick Bid</h3>
+        <p class="muted">Place bids directly on the platform without leaving the vehicle page.</p>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+    
+    .step-card {
+      position: relative;
+      background: white;
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .step-card:hover {
+      transform: translateY(-5px);
+       box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-primary);
+      color: white;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 18px;
+    }
+
+    .step-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .steps-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 
   <script>
     // Client-side auth detection for prerendered pages

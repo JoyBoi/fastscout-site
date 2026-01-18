@@ -1,0 +1,124 @@
+---
+export const prerender = true;
+
+import Layout from "../../shared/Layout.astro";
+import { locales, getLocaleFromUrl, useTranslations } from "../../i18n";
+
+export function getStaticPaths() {
+  return locales.map(locale => ({ params: { locale } }));
+}
+
+const locale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(locale);
+const localePath = (path: string) => `/${locale}${path}`;
+---
+
+<Layout title="Documentation" locale={locale}>
+  <section class="container section" style="padding-top: 60px;">
+    <div style="text-align: center; margin-bottom: 60px;">
+        <span class="badge" style="margin-bottom: 16px;">Help Center</span>
+        <h1 style="font-size: clamp(40px, 5vw, 64px); font-weight: 800; opacity: 1; letter-spacing: -1px; margin-bottom: 24px;">
+          How can we <span class="text-gradient">help?</span>
+        </h1>
+        <p class="lead" style="max-width: 600px; margin: 0 auto;">
+          Everything you need to know about using FastScout to find better car deals.
+        </p>
+    </div>
+
+    <!-- Quick Links Grid -->
+    <div class="grid grid-3" style="margin-bottom: 80px;">
+        <a href={localePath('/extension')} class="card docs-card">
+            <div class="icon-box">🚀</div>
+            <h3>Getting Started</h3>
+            <p class="muted">Install the Chrome extension and set up your account in minutes.</p>
+        </a>
+        <a href={localePath('/extension')} class="card docs-card">
+            <div class="icon-box">🧩</div>
+            <h3>Chrome Extension</h3>
+            <p class="muted">Learn how to use vehicle detection, one-click search, and quick bids.</p>
+        </a>
+        <a href={localePath('/pricing')} class="card docs-card">
+            <div class="icon-box">💳</div>
+            <h3>Billing & Subscription</h3>
+            <p class="muted">Manage your plan, view invoices, and update payment methods.</p>
+        </a>
+    </div>
+
+    <!-- FAQ Section -->
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 40px; text-align: center;">Frequently Asked Questions</h2>
+        
+        <div class="faq-item">
+            <h4>How does the Quick Bid feature work?</h4>
+            <p class="muted">When viewing a vehicle on a supported platform (like Auto1 or CarCollect), the FastScout extension injects a bid form directly onto the page. You can enter your amount and submit it without leaving the listing.</p>
+        </div>
+
+        <div class="faq-item">
+            <h4>Which platforms are supported?</h4>
+            <p class="muted">Currently, we support Auto1, CarCollect, and FastBack Trade. We are constantly working on adding more B2B automotive platforms.</p>
+        </div>
+
+        <div class="faq-item">
+            <h4>Is my data secure?</h4>
+            <p class="muted">Yes. The extension analyzes the page content locally in your browser. We only store your subscription status and authentication token. No browsing history is sent to our servers.</p>
+        </div>
+
+        <div class="faq-item">
+            <h4>Can I share my account?</h4>
+            <p class="muted">FastScout accounts are for individual use. If you have a team, please contact us for enterprise team pricing.</p>
+        </div>
+    </div>
+    
+    <div style="margin-top: 80px; padding: 40px; background: var(--color-bg-subtle); border-radius: 20px; text-align: center; border: 1px solid var(--color-border);">
+        <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Still need help?</h3>
+        <p class="muted" style="margin-bottom: 24px;">Our support team is available during business hours to assist you.</p>
+        <a href="mailto:support@fastscout.app" class="btn btn-primary">Contact Support</a>
+    </div>
+
+  </section>
+
+  <style>
+    .docs-card {
+        text-decoration: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: block;
+    }
+    .docs-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+    }
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        background: #F1F5F9;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    .docs-card h3 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--color-text);
+    }
+    .faq-item {
+        background: white;
+        border: 1px solid var(--color-border);
+        padding: 24px;
+        border-radius: 16px;
+        margin-bottom: 16px;
+    }
+    .faq-item h4 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .faq-item p {
+        margin: 0;
+        line-height: 1.6;
+    }
+  </style>
+</Layout>
