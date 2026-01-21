@@ -63,9 +63,9 @@ if (data.user) {
         <input type="hidden" name="locale" value={locale} />
         <button class="btn btn-primary" type="submit">{isSignup ? t.auth.createAccount : t.auth.signInLink}</button>
       </form>
-      <div class="hero-actions" style="margin-top:12px">
-        <a href="/auth/oauth/github" class="btn btn-outline">{t.auth.continueWith} {t.auth.github}</a>
-        <a href="/auth/oauth/google" class="btn btn-outline">{t.auth.continueWith} {t.auth.google}</a>
+      <div class="hero-actions" style="margin-top:12px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+        <a href="/auth/oauth/github" class="btn btn-outline" style="flex:1; white-space:nowrap;">{t.auth.continueWith} {t.auth.github}</a>
+        <a href="/auth/oauth/google" class="btn btn-outline" style="flex:1; white-space:nowrap;">{t.auth.continueWith} {t.auth.google}</a>
       </div>
       <p class="muted" style="margin-top:16px; font-size:14px">
         {

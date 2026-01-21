@@ -112,8 +112,6 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       .stagger-3 { animation-delay: 0.3s; }
 
       /* Components */
-      /* Components */
-      /* Components */
       header {
         position: fixed;
         top: 20px;
@@ -160,6 +158,16 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       nav a[aria-current="page"] {
         color: var(--color-primary);
         background: rgba(37, 99, 235, 0.06); 
+      }
+      
+      /* Mobile Menu Toggle */
+      .mobile-menu-btn {
+        display: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        color: var(--color-text);
       }
 
       .btn {
@@ -327,6 +335,45 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         outline: none;
       }
 
+      @media (max-width: 900px) {
+        .mobile-menu-btn { display: block; }
+        
+        header {
+          padding: 12px 16px;
+        }
+
+        nav {
+          position: fixed;
+          top: 70px; /* Below header */
+          left: 50%;
+          transform: translateX(-50%) translateY(-10px);
+          width: 90%;
+          background: white;
+          border: 1px solid var(--color-border);
+          border-radius: 20px;
+          padding: 16px;
+          flex-direction: column;
+          align-items: stretch;
+          box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+          opacity: 0;
+          pointer-events: none;
+          transition: all 0.2s ease;
+        }
+
+        nav.is-open {
+          opacity: 1;
+          pointer-events: all;
+          transform: translateX(-50%) translateY(0);
+        }
+
+        nav a {
+          text-align: center;
+          padding: 12px;
+        }
+
+        .section { padding: 80px 0 40px; }
+      }
+
       @media (max-width: 768px) {
         .grid-2, .grid-3 { grid-template-columns: 1fr; }
         .bg-glow { display: none; }
@@ -342,7 +389,10 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
           FastScout
         </a>
       </div>
-      <nav aria-label="Main navigation">
+      <button class="mobile-menu-btn" aria-label="Menu" id="mobile-menu-toggle">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+      <nav aria-label="Main navigation" id="main-nav">
         <LanguageSwitcher locale={locale} />
         <a href={localePath('/pricing')} aria-current={pathWithoutLocale === '/pricing' ? "page" : undefined}>{t.nav.pricing}</a>
         <!-- Client-side auth-aware nav links -->
@@ -424,9 +474,30 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         });
       }
       
+      // Mobile Menu Toggle
+      function setupMobileMenu() {
+        const btn = document.getElementById('mobile-menu-toggle');
+        const nav = document.getElementById('main-nav');
+        if (btn && nav) {
+            btn.addEventListener('click', () => {
+                nav.classList.toggle('is-open');
+            });
+            // Close menu when clicking links
+            nav.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => nav.classList.remove('is-open'));
+            });
+        }
+      }
+
       // Run on load and after Astro page transitions
-      document.addEventListener('DOMContentLoaded', updateAuthUI);
-      document.addEventListener('astro:page-load', updateAuthUI);
+      document.addEventListener('DOMContentLoaded', () => {
+        updateAuthUI();
+        setupMobileMenu();
+      });
+      document.addEventListener('astro:page-load', () => {
+        updateAuthUI();
+        setupMobileMenu();
+      });
     </script>
   </body>
 
