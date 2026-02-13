@@ -1,6 +1,7 @@
 /.astro
 /.env
 /dist
+/ref
 /node_modules
 /supabase
 /.vercel

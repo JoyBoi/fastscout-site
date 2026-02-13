@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "supabase:gen-seed": "node scripts/seed/generate-sql.mjs",
+    "supabase:push": "supabase db push",
+    "supabase:seed:remote": "psql \"$SUPABASE_DB_URL\" -f supabase/seed.sql"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.1",

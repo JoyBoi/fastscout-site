@@ -14,6 +14,7 @@ interface ImportMetaEnv {
   readonly STRIPE_WRAPPER_BASE_URL: string;
   readonly JWT_SECRET: string;
   readonly CHROME_EXTENSION_ID: string;
+  readonly EXTENSION_DATA_VERSION: string;
 }
 
 interface ImportMeta {

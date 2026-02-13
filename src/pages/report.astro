@@ -1,0 +1,163 @@
+---
+export const prerender = false;
+import Layout from "../shared/Layout.astro";
+import { defaultLocale } from "../i18n";
+
+// Use default locale since this is a global unlisted page
+const locale = defaultLocale;
+---
+
+<Layout title="Report Issue" locale={locale}>
+  <main class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-100 p-8 relative overflow-hidden">
+      <!-- Background Glow -->
+      <div class="absolute -top-20 -right-20 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+      <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-violet-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+
+      <div class="relative z-10">
+        <div class="mb-8 text-center">
+          <h1 class="text-3xl font-bold text-slate-900 mb-2">Report an Issue</h1>
+          <p class="text-slate-500">Help us improve FastScout. Let us know about bugs, feature requests, or general feedback.</p>
+        </div>
+
+        <form id="report-form" class="space-y-6">
+          <!-- Type Selection -->
+          <div class="grid grid-cols-3 gap-3 p-1 bg-slate-50 rounded-xl border border-slate-200">
+            <label class="cursor-pointer">
+              <input type="radio" name="type" value="bug" class="peer sr-only" checked />
+              <div class="py-2 text-center text-sm font-medium text-slate-500 rounded-lg peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm transition-all hover:text-slate-700">
+                Bug
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="type" value="feature_request" class="peer sr-only" />
+              <div class="py-2 text-center text-sm font-medium text-slate-500 rounded-lg peer-checked:bg-white peer-checked:text-violet-600 peer-checked:shadow-sm transition-all hover:text-slate-700">
+                Feature
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="type" value="other" class="peer sr-only" />
+              <div class="py-2 text-center text-sm font-medium text-slate-500 rounded-lg peer-checked:bg-white peer-checked:text-emerald-600 peer-checked:shadow-sm transition-all hover:text-slate-700">
+                Other
+              </div>
+            </label>
+          </div>
+
+          <!-- Title -->
+          <div>
+            <label for="title" class="block text-sm font-medium text-slate-700 mb-1">Title (Optional)</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+              placeholder="Brief summary of the issue"
+            />
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label for="description" class="block text-sm font-medium text-slate-700 mb-1">Description <span class="text-red-500">*</span></label>
+            <textarea
+              id="description"
+              name="description"
+              required
+              rows="5"
+              class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none"
+              placeholder="Please describe what happened, steps to reproduce, or your idea..."
+            ></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            id="submit-btn"
+            class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/25 transform transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <span>Submit Report</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+            </svg>
+          </button>
+        </form>
+
+        <!-- Success Message (Hidden by default) -->
+        <div id="success-message" class="hidden text-center py-8">
+          <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900 mb-2">Thank You!</h2>
+          <p class="text-slate-500 mb-6">Your report has been submitted successfully. We'll look into it shortly.</p>
+          <button
+            onclick="window.location.reload()"
+            class="text-blue-600 font-medium hover:text-blue-700 transition-colors"
+          >
+            Submit another report
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const form = document.getElementById('report-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const successMessage = document.getElementById('success-message') as HTMLDivElement;
+  const originalBtnText = submitBtn.innerHTML;
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Sending...
+    `;
+
+    const formData = new FormData(form);
+    const data = {
+      title: formData.get('title'),
+      description: formData.get('description'),
+      type: formData.get('type'),
+      source: 'report_page',
+      metadata: {
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        referrer: document.referrer
+      }
+    };
+
+    try {
+      const response = await fetch('/api/report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit report');
+      }
+
+      // Show success message
+      form.classList.add('hidden');
+      successMessage.classList.remove('hidden');
+
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      alert('Failed to submit report. Please try again.');
+      
+      // Reset button
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+    }
+  });
+</script>
