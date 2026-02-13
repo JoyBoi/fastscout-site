@@ -11,6 +11,9 @@ interface Props {
 
 const { title = "FastScout" } = Astro.props;
 
+// Import global styles
+import "../styles/global.css";
+
 // Get locale from URL or props
 const locale = Astro.props.locale ?? getLocaleFromUrl(Astro.url);
 const t = useTranslations(locale);

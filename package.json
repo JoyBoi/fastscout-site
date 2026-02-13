@@ -12,14 +12,16 @@
     "supabase:seed:remote": "psql \"$SUPABASE_DB_URL\" -f supabase/seed.sql"
   },
   "dependencies": {
-    "@astrojs/node": "^9.5.1",
+    "@astrojs/node": "^9.5.3",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.1",
-    "astro": "^5.16.6",
+    "@tailwindcss/vite": "^4.1.18",
+    "astro": "^5.17.2",
     "jsonwebtoken": "^9.0.2",
-    "stripe": "^15.8.0"
+    "stripe": "^15.8.0",
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
-    "@astrojs/vercel": "^9.0.2"
+    "@astrojs/vercel": "^9.0.4"
   }
 }
