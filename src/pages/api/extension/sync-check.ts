@@ -1,7 +1,9 @@
 import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../lib/cors";
 
-export const GET: APIRoute = async (ctx) => {
+export const prerender = false;
+
+export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
   const raw = (import.meta.env.EXTENSION_DATA_VERSION as string | undefined) ?? "1";

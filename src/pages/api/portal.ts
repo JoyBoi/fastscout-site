@@ -1,9 +1,11 @@
 import type { APIRoute } from "astro";
 import { getSupabaseServerClient } from "../../lib/supabase";
-import stripe from "../../lib/stripe";
+import stripe, { findActiveSubscriptionByEmail } from "../../lib/stripe";
 import { corsHeaders, preflight } from "../../lib/cors";
 
-export const GET: APIRoute = async (ctx) => {
+export const prerender = false;
+
+export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
   const supabase = getSupabaseServerClient(ctx as any);

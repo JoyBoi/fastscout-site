@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
-import { corsHeaders, preflight } from "../../lib/cors";
 import { getSupabaseServerClient } from "../../lib/supabase";
+import { corsHeaders, preflight } from "../../lib/cors";
+
+export const prerender = false;
 
 export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);

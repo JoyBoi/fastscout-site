@@ -7,6 +7,8 @@ function normalize(s: string | undefined | null) {
   return (s ?? "").trim().toLowerCase();
 }
 
+export const prerender = false;
+
 export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;

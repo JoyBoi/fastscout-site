@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { getSupabaseServerClient } from "../../lib/supabase";
 
+export const prerender = false;
+
 export const POST: APIRoute = async (ctx) => {
   const supabase = getSupabaseServerClient(ctx as any);
   const { data: { session } } = await supabase.auth.getSession();

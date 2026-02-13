@@ -4,6 +4,8 @@ import { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } fro
 import { getSupabaseServerClient } from "../../lib/supabase";
 import { corsHeaders, preflight } from "../../lib/cors";
 
+export const prerender = false;
+
 export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
@@ -46,16 +48,12 @@ export const POST: APIRoute = async (ctx) => {
     customerId,
     scope: ["bridge:access"],
   };
-
-  const jwtSecret = import.meta.env.JWT_SECRET as string | undefined;
-  // Require minimum 32 characters for adequate security
-  if (!jwtSecret || jwtSecret.length < 32) return new Response(JSON.stringify({ error: "misconfigured_jwt" }), { status: 500, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
-  const extensionToken = jwt.sign(payload, jwtSecret, { expiresIn: "7d" });
-  return new Response(JSON.stringify({ token: extensionToken }), { status: 200, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+  const secret = import.meta.env.JWT_SECRET;
+  if (!secret) return new Response(JSON.stringify({ error: "server_error" }), { status: 500, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+  const token = jwt.sign(payload, secret, { expiresIn: "1h" });
+  return new Response(JSON.stringify({ token }), { status: 200, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 };
 
 export const OPTIONS: APIRoute = async (ctx) => {
-  const pf = preflight(ctx.request);
-  if (pf) return pf;
-  return new Response(null, { status: 204, headers: { ...corsHeaders(ctx.request) } });
+  return new Response(null, { status: 204, headers: corsHeaders(ctx.request) });
 };
