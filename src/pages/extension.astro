@@ -8,7 +8,7 @@ const { data } = await supabase.auth.getUser();
 const signedIn = !!data.user;
 ---
 
-<Layout title="FastScout Chrome Extension">
+<Layout title="AutoBridge Chrome Extension">
   <div class="glow-orb" style="top: -10%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%); filter: blur(60px); position: absolute; z-index: -1;"></div>
 
   <section class="container section" style="padding-top: 30px; text-align: center;">
@@ -19,7 +19,7 @@ const signedIn = !!data.user;
           <span class="text-gradient">Chrome Extension</span>
         </h1>
         <p class="lead" style="margin: 0 auto 40px; max-width: 600px;">
-          Bring the power of FastScout directly into AutoScout24. Get instant Quick Bids and one-click analysis without leaving the listing.
+          Bring the power of AutoBridge directly into AutoScout24. Get instant Quick Bids and one-click analysis without leaving the listing.
         </p>
 
         <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
@@ -36,7 +36,7 @@ const signedIn = !!data.user;
         
          { !signedIn && (
             <p class="muted" style="margin-top: 16px; font-size: 14px;">
-                * A FastScout account is required to use the extension.
+                * A AutoBridge account is required to use the extension.
             </p>
          )}
     </div>
@@ -52,7 +52,7 @@ const signedIn = !!data.user;
          <div class="card">
             <div style="width: 48px; height: 48px; background: var(--color-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">🔄</div>
             <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Instant Sync</h3>
-            <p class="muted">All your activity is automatically synced to your FastScout dashboard.</p>
+            <p class="muted">All your activity is automatically synced to your AutoBridge dashboard.</p>
         </div>
          <div class="card">
             <div style="width: 48px; height: 48px; background: var(--color-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 24px;">🛡️</div>

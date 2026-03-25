@@ -10,7 +10,7 @@ export default {
     hero: {
       title1: "Surfez plus vite.",
       title2: "Travaillez mieux.",
-      subtitle: "FastScout ajoute un panneau d'enchères flottant et une recherche AutoScout24 en un clic. Conçu pour les professionnels qui valorisent la vitesse et la précision.",
+      subtitle: "AutoBridge ajoute un panneau d'enchères flottant et une recherche AutoScout24 en un clic. Conçu pour les professionnels qui valorisent la vitesse et la précision.",
       ctaGetStarted: "Commencer",
       ctaSignIn: "Connexion",
       ctaDashboard: "Tableau de bord",
@@ -32,7 +32,7 @@ export default {
       },
     },
     testimonial: {
-      quote: "Au départ, estimer 100 voitures sur Fastback me prenait 1h30, soit environ 1 minute par voiture. Grâce à FastScout, j'ai réduit ce temps à 10-15 secondes par voiture et gagné énormément en efficacité au quotidien.",
+      quote: "Au départ, estimer 100 voitures sur Fastback me prenait 1h30, soit environ 1 minute par voiture. Grâce à AutoBridge, j'ai réduit ce temps à 10-15 secondes par voiture et gagné énormément en efficacité au quotidien.",
       author: "Mikail Karaman",
       role: "Concessionnaire Automobile",
     },
@@ -94,7 +94,7 @@ export default {
     nextBilling: "Prochaine facturation",
     manageBilling: "Gérer la facturation",
     upgradePlan: "Améliorer le plan",
-    unlockAccess: "Débloquez l'accès complet à FastScout.",
+    unlockAccess: "Débloquez l'accès complet à AutoBridge.",
     billingHistory: "Historique de facturation",
     last12Months: "12 derniers mois",
     invoice: "Facture",
@@ -154,7 +154,7 @@ export default {
     copyright: "Tous droits réservés.",
   },
   auth: {
-    signIn: "Connexion à FastScout",
+    signIn: "Connexion à AutoBridge",
     welcome: "Bienvenue",
     signUp: "Créer votre compte",
     email: "Adresse email",
@@ -176,11 +176,11 @@ export default {
     lastUpdated: "Dernière mise à jour",
     intro: {
       title: "1. Introduction",
-      content: "Bienvenue sur FastScout. En accédant à notre site web et en utilisant notre extension Chrome, vous acceptez d'être lié par ces conditions d'utilisation.",
+      content: "Bienvenue sur AutoBridge. En accédant à notre site web et en utilisant notre extension Chrome, vous acceptez d'être lié par ces conditions d'utilisation.",
     },
     use: {
       title: "2. Utilisation du service",
-      content: "FastScout fournit des outils pour les professionnels de l'automobile afin d'analyser les annonces de véhicules. Vous acceptez d'utiliser le service uniquement à des fins légales et conformément à ces conditions.",
+      content: "AutoBridge fournit des outils pour les professionnels de l'automobile afin d'analyser les annonces de véhicules. Vous acceptez d'utiliser le service uniquement à des fins légales et conformément à ces conditions.",
     },
     accounts: {
       title: "3. Comptes",
@@ -196,7 +196,7 @@ export default {
     },
     liability: {
       title: "6. Limitation de responsabilité",
-      content: "En aucun cas FastScout ne pourra être tenu responsable des dommages indirects, accessoires, spéciaux, consécutifs ou punitifs.",
+      content: "En aucun cas AutoBridge ne pourra être tenu responsable des dommages indirects, accessoires, spéciaux, consécutifs ou punitifs.",
     },
   },
   privacy: {
@@ -232,7 +232,7 @@ export default {
     badge: "Centre d'aide",
     heroTitle1: "Comment pouvons-nous",
     heroTitle2: "vous aider ?",
-    lead: "Tout ce que vous devez savoir pour utiliser FastScout et trouver les meilleures affaires.",
+    lead: "Tout ce que vous devez savoir pour utiliser AutoBridge et trouver les meilleures affaires.",
     quickLinks: {
       start: {
         title: "Commencer",
@@ -251,7 +251,7 @@ export default {
       title: "Questions fréquemments posées",
       q1: {
         title: "Comment fonctionne la fonction Enchère Rapide ?",
-        content: "Lorsque vous consultez un véhicule sur une plateforme supportée (comme Auto1 ou CarCollect), l'extension FastScout injecte un formulaire d'enchère directement sur la page. Vous pouvez saisir votre montant et le soumettre sans quitter l'annonce."
+        content: "Lorsque vous consultez un véhicule sur une plateforme supportée (comme Auto1 ou CarCollect), l'extension AutoBridge injecte un formulaire d'enchère directement sur la page. Vous pouvez saisir votre montant et le soumettre sans quitter l'annonce."
       },
       q2: {
         title: "Quelles plateformes sont supportées ?",
@@ -263,7 +263,7 @@ export default {
       },
       q4: {
         title: "Puis-je partager mon compte ?",
-        content: "Les comptes FastScout sont destinés à un usage individuel. Si vous avez une équipe, contactez-nous pour connaître nos tarifs d'équipe entreprise."
+        content: "Les comptes AutoBridge sont destinés à un usage individuel. Si vous avez une équipe, contactez-nous pour connaître nos tarifs d'équipe entreprise."
       }
     },
     support: {
@@ -287,7 +287,7 @@ export default {
     lead: "Recherchez instantanément des véhicules comparables sur AutoScout24 directement depuis Auto1, CarCollect et FastBack Trade.",
     ctaAdd: "Ajouter à Chrome",
     ctaAccount: "Créer un compte gratuit",
-    req: "* Un compte FastScout est requis pour utiliser l'extension.",
+    req: "* Un compte AutoBridge est requis pour utiliser l'extension.",
     platforms: {
       title: "Fonctionne là où vous travaillez"
     },
@@ -309,7 +309,7 @@ export default {
       title: "Comment ça marche",
       step1: {
         title: "Installer et se connecter",
-        description: "Ajoutez l'extension à Chrome et connectez-vous avec votre compte FastScout."
+        description: "Ajoutez l'extension à Chrome et connectez-vous avec votre compte AutoBridge."
       },
       step2: {
         title: "Parcourir les annonces",
@@ -317,7 +317,7 @@ export default {
       },
       step3: {
         title: "Un seul clic",
-        description: "Cliquez sur le bouton flottant FastScout pour trouver instantanément des correspondances sur AutoScout24."
+        description: "Cliquez sur le bouton flottant AutoBridge pour trouver instantanément des correspondances sur AutoScout24."
       },
       step4: {
         title: "Enchère rapide",

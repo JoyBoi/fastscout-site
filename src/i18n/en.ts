@@ -10,7 +10,7 @@ export default {
     hero: {
       title1: "Surf faster.",
       title2: "Work smarter.",
-      subtitle: "FastScout adds a floating Quick Bid panel and one-click AutoScout24 search. Designed for professionals who value speed and precision.",
+      subtitle: "AutoBridge adds a floating Quick Bid panel and one-click AutoScout24 search. Designed for professionals who value speed and precision.",
       ctaGetStarted: "Get Started",
       ctaSignIn: "Sign In",
       ctaDashboard: "Go to Dashboard",
@@ -32,7 +32,7 @@ export default {
       },
     },
     testimonial: {
-      quote: "Initially, pricing 100 cars on Fastback took me 1.5 hours, about 1 minute per car. Thanks to FastScout, I optimized this to 10-15 seconds per car and gained massive daily efficiency.",
+      quote: "Initially, pricing 100 cars on Fastback took me 1.5 hours, about 1 minute per car. Thanks to AutoBridge, I optimized this to 10-15 seconds per car and gained massive daily efficiency.",
       author: "Mikail Karaman",
       role: "Automotive Dealer",
     },
@@ -94,7 +94,7 @@ export default {
     nextBilling: "Next billing",
     manageBilling: "Manage Billing",
     upgradePlan: "Upgrade Plan",
-    unlockAccess: "Unlock full access to FastScout.",
+    unlockAccess: "Unlock full access to AutoBridge.",
     billingHistory: "Billing History",
     last12Months: "Last 12 months",
     invoice: "Invoice",
@@ -154,7 +154,7 @@ export default {
     copyright: "All rights reserved.",
   },
   auth: {
-    signIn: "Sign in to FastScout",
+    signIn: "Sign in to AutoBridge",
     welcome: "Welcome",
     signUp: "Create your account",
     email: "Email address",
@@ -176,11 +176,11 @@ export default {
     lastUpdated: "Last updated",
     intro: {
       title: "1. Introduction",
-      content: "Welcome to FastScout. By accessing our website and using our Chrome Extension, you agree to be bound by these Terms of Service.",
+      content: "Welcome to AutoBridge. By accessing our website and using our Chrome Extension, you agree to be bound by these Terms of Service.",
     },
     use: {
       title: "2. Use of Service",
-      content: "FastScout provides tools for automotive professionals to analyze vehicle listings. You agree to use the service only for lawful purposes and in accordance with these terms.",
+      content: "AutoBridge provides tools for automotive professionals to analyze vehicle listings. You agree to use the service only for lawful purposes and in accordance with these terms.",
     },
     accounts: {
       title: "3. Accounts",
@@ -196,7 +196,7 @@ export default {
     },
     liability: {
       title: "6. Limitation of Liability",
-      content: "In no event shall FastScout be liable for any indirect, incidental, special, consequential or punitive damages.",
+      content: "In no event shall AutoBridge be liable for any indirect, incidental, special, consequential or punitive damages.",
     },
   },
   privacy: {
@@ -232,7 +232,7 @@ export default {
     badge: "Help Center",
     heroTitle1: "How can we",
     heroTitle2: "help?",
-    lead: "Everything you need to know about using FastScout to find better car deals.",
+    lead: "Everything you need to know about using AutoBridge to find better car deals.",
     quickLinks: {
       start: {
         title: "Getting Started",
@@ -251,7 +251,7 @@ export default {
       title: "Frequently Asked Questions",
       q1: {
         title: "How does the Quick Bid feature work?",
-        content: "When viewing a vehicle on a supported platform (like Auto1 or CarCollect), the FastScout extension injects a bid form directly onto the page. You can enter your amount and submit it without leaving the listing."
+        content: "When viewing a vehicle on a supported platform (like Auto1 or CarCollect), the AutoBridge extension injects a bid form directly onto the page. You can enter your amount and submit it without leaving the listing."
       },
       q2: {
         title: "Which platforms are supported?",
@@ -263,7 +263,7 @@ export default {
       },
       q4: {
         title: "Can I share my account?",
-        content: "FastScout accounts are for individual use. If you have a team, please contact us for enterprise team pricing."
+        content: "AutoBridge accounts are for individual use. If you have a team, please contact us for enterprise team pricing."
       }
     },
     support: {
@@ -287,7 +287,7 @@ export default {
     lead: "Instantly search for comparable vehicles on AutoScout24 directly from Auto1, CarCollect, and FastBack Trade.",
     ctaAdd: "Add to Chrome",
     ctaAccount: "Create Free Account",
-    req: "* A FastScout account is required to use the extension.",
+    req: "* A AutoBridge account is required to use the extension.",
     platforms: {
       title: "Works where you work"
     },
@@ -309,7 +309,7 @@ export default {
       title: "How It Works",
       step1: {
         title: "Install & Sign In",
-        description: "Add the extension to Chrome and sign in with your FastScout account."
+        description: "Add the extension to Chrome and sign in with your AutoBridge account."
       },
       step2: {
         title: "Browse Listings",
@@ -317,7 +317,7 @@ export default {
       },
       step3: {
         title: "One Click",
-        description: "Click the floating FastScout button to instantly find matches on AutoScout24."
+        description: "Click the floating AutoBridge button to instantly find matches on AutoScout24."
       },
       step4: {
         title: "Quick Bid",

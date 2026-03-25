@@ -9,7 +9,7 @@ export default {
     hero: {
       title1: "Surf sneller.",
       title2: "Werk slimmer.",
-      subtitle: "FastScout voegt een zwevend Quick Bid-paneel en AutoScout24-zoeken met een klik toe. Ontworpen voor professionals die snelheid en precisie waarderen.",
+      subtitle: "AutoBridge voegt een zwevend Quick Bid-paneel en AutoScout24-zoeken met een klik toe. Ontworpen voor professionals die snelheid en precisie waarderen.",
       ctaGetStarted: "Aan de slag",
       ctaSignIn: "Inloggen",
       ctaDashboard: "Naar Dashboard",
@@ -31,7 +31,7 @@ export default {
       },
     },
     testimonial: {
-      quote: "In het begin kostte het prijzen van 100 auto's op Fastback me 1,5 uur, ongeveer 1 minuut per auto. Dankzij FastScout heb ik dit geoptimaliseerd naar 10-15 seconden per auto en heb ik een enorme dagelijkse efficiëntiewinst geboekt.",
+      quote: "In het begin kostte het prijzen van 100 auto's op Fastback me 1,5 uur, ongeveer 1 minuut per auto. Dankzij AutoBridge heb ik dit geoptimaliseerd naar 10-15 seconden per auto en heb ik een enorme dagelijkse efficiëntiewinst geboekt.",
       author: "Mikail Karaman",
       role: "Autodealer",
     },
@@ -93,7 +93,7 @@ export default {
     nextBilling: "Volgende facturering",
     manageBilling: "Facturering beheren",
     upgradePlan: "Upgraden",
-    unlockAccess: "Ontgrendel volledige toegang tot FastScout.",
+    unlockAccess: "Ontgrendel volledige toegang tot AutoBridge.",
     billingHistory: "Factureringsgeschiedenis",
     last12Months: "Laatste 12 maanden",
     invoice: "Factuur",
@@ -153,7 +153,7 @@ export default {
     copyright: "Alle rechten voorbehouden.",
   },
   auth: {
-    signIn: "Inloggen bij FastScout",
+    signIn: "Inloggen bij AutoBridge",
     welcome: "Welkom",
     signUp: "Account aanmaken",
     email: "E-mailadres",
@@ -175,11 +175,11 @@ export default {
     lastUpdated: "Laatst bijgewerkt",
     intro: {
       title: "1. Inleiding",
-      content: "Welkom bij FastScout. Door onze website te bezoeken en onze Chrome-extensie te gebruiken, gaat u akkoord gebonden te zijn aan deze servicevoorwaarden.",
+      content: "Welkom bij AutoBridge. Door onze website te bezoeken en onze Chrome-extensie te gebruiken, gaat u akkoord gebonden te zijn aan deze servicevoorwaarden.",
     },
     use: {
       title: "2. Gebruik van de dienst",
-      content: "FastScout biedt tools voor autoprofessionals om voertuigadvertenties te analyseren. U gaat ermee akkoord de service alleen voor wettige doeleinden en in overeenstemming met deze voorwaarden te gebruiken.",
+      content: "AutoBridge biedt tools voor autoprofessionals om voertuigadvertenties te analyseren. U gaat ermee akkoord de service alleen voor wettige doeleinden en in overeenstemming met deze voorwaarden te gebruiken.",
     },
     accounts: {
       title: "3. Accounts",
@@ -195,7 +195,7 @@ export default {
     },
     liability: {
       title: "6. Beperking van aansprakelijkheid",
-      content: "In geen geval zal FastScout aansprakelijk zijn voor enige indirecte, incidentele, speciale, gevolg- of strafschade.",
+      content: "In geen geval zal AutoBridge aansprakelijk zijn voor enige indirecte, incidentele, speciale, gevolg- of strafschade.",
     },
   },
   privacy: {
@@ -231,7 +231,7 @@ export default {
     badge: "Helpcentrum",
     heroTitle1: "Hoe kunnen we",
     heroTitle2: "u helpen?",
-    lead: "Alles wat u moet weten om FastScout te gebruiken en betere autodeals te vinden.",
+    lead: "Alles wat u moet weten om AutoBridge te gebruiken en betere autodeals te vinden.",
     quickLinks: {
       start: {
         title: "Aan de slag",
@@ -250,7 +250,7 @@ export default {
       title: "Veelgestelde vragen",
       q1: {
         title: "Hoe werkt de Quick Bid-functie?",
-        content: "Wanneer u een voertuig bekijkt op een ondersteund platform (zoals Auto1 of CarCollect), injecteert de FastScout-extensie een biedformulier direct op de pagina. U kunt uw bedrag invoeren en indienen zonder de advertentie te verlaten."
+        content: "Wanneer u een voertuig bekijkt op een ondersteund platform (zoals Auto1 of CarCollect), injecteert de AutoBridge-extensie een biedformulier direct op de pagina. U kunt uw bedrag invoeren en indienen zonder de advertentie te verlaten."
       },
       q2: {
         title: "Welke platforms worden ondersteund?",
@@ -262,7 +262,7 @@ export default {
       },
       q4: {
         title: "Kan ik mijn account delen?",
-        content: "FastScout-accounts zijn voor individueel gebruik. Heeft u een team, neem dan contact met ons op voor zakelijke teamprijzen."
+        content: "AutoBridge-accounts zijn voor individueel gebruik. Heeft u een team, neem dan contact met ons op voor zakelijke teamprijzen."
       }
     },
     support: {
@@ -286,7 +286,7 @@ export default {
     lead: "Zoek direct naar vergelijkbare voertuigen op AutoScout24 rechtstreeks vanuit Auto1, CarCollect en FastBack Trade.",
     ctaAdd: "Toevoegen aan Chrome",
     ctaAccount: "Gratis account aanmaken",
-    req: "* Een FastScout-account is vereist om de extensie te gebruiken.",
+    req: "* Een AutoBridge-account is vereist om de extensie te gebruiken.",
     platforms: {
       title: "Werkt waar u werkt"
     },
@@ -308,7 +308,7 @@ export default {
       title: "Hoe het werkt",
       step1: {
         title: "Installeren en inloggen",
-        description: "Voeg de extensie toe aan Chrome en log in met uw FastScout-account."
+        description: "Voeg de extensie toe aan Chrome en log in met uw AutoBridge-account."
       },
       step2: {
         title: "Advertenties bekijken",
@@ -316,7 +316,7 @@ export default {
       },
       step3: {
         title: "Eén klik",
-        description: "Klik op de zwevende FastScout-knop om direct overeenkomsten op AutoScout24 te vinden."
+        description: "Klik op de zwevende AutoBridge-knop om direct overeenkomsten op AutoScout24 te vinden."
       },
       step4: {
         title: "Snel bieden",
