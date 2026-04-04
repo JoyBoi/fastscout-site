@@ -35,7 +35,8 @@ export default defineSchema({
     ts: v.number(),
   })
     .index("by_userId", ["userId"])
-    .index("by_userId_action", ["userId", "action"]),
+    .index("by_userId_action", ["userId", "action"])
+    .index("by_ts", ["ts"]),
 
   subscriptionStatus: defineTable({
     userId: v.string(),
@@ -50,11 +51,22 @@ export default defineSchema({
   }).index("by_userId", ["userId"]),
 
   reports: defineTable({
-    userId: v.string(),
+    userId: v.optional(v.string()),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
     type: v.string(),
     source: v.optional(v.string()),
     metadata: v.optional(v.any()),
   }).index("by_userId", ["userId"]),
+
+  users: defineTable({
+    email: v.string(),
+    emailLower: v.optional(v.string()),
+    passwordHash: v.string(),
+    name: v.optional(v.string()),
+    fullName: v.optional(v.string()),
+    role: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  }).index("by_email", ["email"]),
 });

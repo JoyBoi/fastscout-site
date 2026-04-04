@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { getSupabaseServerClient } from "../../lib/supabase";
+import { getAuthenticatedUser } from "../../lib/auth";
 import { corsHeaders, preflight } from "../../lib/cors";
 import { getConvexClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
@@ -10,9 +10,8 @@ export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
 
-  const supabase = getSupabaseServerClient(ctx as any);
-  // Check auth - optional, capture if available
-  const { data: { user } } = await supabase.auth.getUser();
+  // Auth - optional, capture if available
+  const sessionUser = getAuthenticatedUser(ctx.request);
 
   let payload: any;
   try {
@@ -39,7 +38,7 @@ export const POST: APIRoute = async (ctx) => {
   const convex = getConvexClient();
   try {
     await convex.mutation(api.reports.create, {
-      userId: user?.id || undefined,
+      userId: sessionUser?.userId || undefined,
       title: title || undefined,
       description,
       type: finalType,

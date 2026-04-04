@@ -15,75 +15,75 @@ const localePath = (path: string) => `/${locale}${path}`;
 
 <Layout title="AutoBridge" locale={locale}>
   <!-- Hero Section -->
-  <section class="container section" style="padding-top: 60px; text-align: center;">
+  <section class="container section" style="padding-top: 48px; text-align: center;">
     <div class="animate-enter">
-        <span class="badge" style="margin-bottom: 24px; display: inline-block;">{t.extension.badge}</span>
-        <h1 style="font-family: 'Bricolage Grotesque', serif; font-size: clamp(40px, 5vw, 64px); font-weight: 800; line-height: 1.1; margin-bottom: 24px; letter-spacing: -1px;">
+        <span class="badge" style="margin-bottom: 20px; display: inline-block;">{t.extension.badge}</span>
+        <h1 style="font-family: 'Syne', sans-serif; font-size: clamp(28px, 4vw, 44px); font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -0.5px;">
           Auto<span class="text-gradient">{t.extension.bridge}</span>
         </h1>
-        <p class="lead" style="margin: 0 auto 40px; max-width: 600px;">
+        <p class="lead" style="margin: 0 auto 32px; max-width: 560px; font-size: 14px;">
           {t.extension.lead}
         </p>
 
-        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
-            <a href="#" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.1rem;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-1.07 3.97-2.9 5.34z"/></svg>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <a href="#" class="btn btn-primary" style="padding: 10px 28px; font-size: 14px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-1.07 3.97-2.9 5.34z"/></svg>
                 {t.extension.ctaAdd}
             </a>
-            <a href={localePath("/auth?mode=signup")} class="btn btn-outline" style="padding: 12px 32px; font-size: 1.1rem;" data-cta="guest">
+            <a href={localePath("/auth?mode=signup")} class="btn btn-outline" style="padding: 10px 28px; font-size: 14px;" data-cta="guest">
               {t.extension.ctaAccount}
             </a>
         </div>
-        
-        <p class="muted" style="margin-top: 16px; font-size: 14px;" data-cta="guest">
+
+        <p class="muted" style="margin-top: 12px; font-size: 13px;" data-cta="guest">
             {t.extension.req}
         </p>
     </div>
   </section>
 
   <!-- Supported Platforms -->
-  <section class="container section">
-    <div style="text-align: center; margin-bottom: 40px;">
-      <h2 style="font-family: 'Bricolage Grotesque', serif; font-size: 24px; font-weight: 700; letter-spacing: -0.02em;">{t.extension.platforms.title}</h2>
+  <section class="container section" style="padding-top: 32px; padding-bottom: 32px;">
+    <div style="text-align: center; margin-bottom: 32px;">
+      <h2 style="font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--color-text);">{t.extension.platforms.title}</h2>
     </div>
-    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-      <div style="padding: 12px 24px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-family: 'Bricolage Grotesque', serif; font-weight: 700; font-size: 16px; color: var(--color-text); box-shadow: var(--shadow-xs);">Auto1</div>
-      <div style="padding: 12px 24px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-family: 'Bricolage Grotesque', serif; font-weight: 700; font-size: 16px; color: var(--color-text); box-shadow: var(--shadow-xs);">CarCollect</div>
-      <div style="padding: 12px 24px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-family: 'Bricolage Grotesque', serif; font-weight: 700; font-size: 16px; color: var(--color-text); box-shadow: var(--shadow-xs);">FastBack Trade</div>
+    <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+      <div class="platform-badge">Auto1</div>
+      <div class="platform-badge">CarCollect</div>
+      <div class="platform-badge">FastBack Trade</div>
     </div>
   </section>
 
   <!-- Features Grid -->
-  <section class="container section">
-    <div class="grid grid-3">
-        <div class="card">
-            <div style="width: 48px; height: 48px; background: rgba(37, 99, 235, 0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: var(--color-primary);">
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+  <section class="container section" style="padding-top: 32px; padding-bottom: 32px;">
+    <div class="grid grid-3" style="gap: 16px;">
+        <div class="card" style="padding: 24px;">
+            <div style="width: 40px; height: 40px; background: var(--color-primary-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: var(--color-primary);">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </div>
-            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">{t.extension.features.detection.title}</h3>
-            <p class="muted">{t.extension.features.detection.description}</p>
+            <h3 style="font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--color-text);">{t.extension.features.detection.title}</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5;">{t.extension.features.detection.description}</p>
         </div>
-         <div class="card">
-            <div style="width: 48px; height: 48px; background: rgba(124, 58, 237, 0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: #7C3AED;">
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+         <div class="card" style="padding: 24px;">
+            <div style="width: 40px; height: 40px; background: rgba(124, 58, 237, 0.08); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #7C3AED;">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             </div>
-            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">{t.extension.features.search.title}</h3>
-            <p class="muted">{t.extension.features.search.description}</p>
+            <h3 style="font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--color-text);">{t.extension.features.search.title}</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5;">{t.extension.features.search.description}</p>
         </div>
-         <div class="card">
-            <div style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: #10B981;">
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+         <div class="card" style="padding: 24px;">
+            <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.08); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #10B981;">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
-            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">{t.extension.features.settings.title}</h3>
-            <p class="muted">{t.extension.features.settings.description}</p>
+            <h3 style="font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--color-text);">{t.extension.features.settings.title}</h3>
+            <p class="muted" style="font-size: 13px; line-height: 1.5;">{t.extension.features.settings.description}</p>
         </div>
     </div>
   </section>
 
   <!-- How It Works -->
-  <section class="container section">
-    <h2 style="text-align: center; font-family: 'Bricolage Grotesque', serif; font-size: 32px; font-weight: 800; margin-bottom: 60px; letter-spacing: -0.02em;">{t.extension.steps.title}</h2>
-    
+  <section class="container section" style="padding-top: 32px; padding-bottom: 48px;">
+    <h2 style="text-align: center; font-family: 'Syne', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 800; margin-bottom: 48px; letter-spacing: -0.02em; color: var(--color-text);">{t.extension.steps.title}</h2>
+
     <div class="steps-grid">
       <div class="step-card">
         <div class="step-number">1</div>
@@ -108,10 +108,23 @@ const localePath = (path: string) => `/${locale}${path}`;
     </div>
   </section>
   <style>
+    .platform-badge {
+      padding: 10px 20px;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--color-text);
+      box-shadow: var(--shadow-xs);
+      backdrop-filter: blur(12px);
+    }
+
     .steps-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 24px;
+      gap: 18px;
       position: relative;
     }
 
@@ -119,9 +132,9 @@ const localePath = (path: string) => `/${locale}${path}`;
     .steps-grid::before {
       content: '';
       position: absolute;
-      top: 52px;
-      left: calc(12.5% + 20px);
-      right: calc(12.5% + 20px);
+      top: 44px;
+      left: calc(12.5% + 16px);
+      right: calc(12.5% + 16px);
       height: 2px;
       background: var(--color-border);
       z-index: 0;
@@ -132,41 +145,48 @@ const localePath = (path: string) => `/${locale}${path}`;
       background: var(--color-bg-card);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
-      padding: 32px 24px;
+      padding: 24px 20px;
       text-align: center;
       transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       z-index: 1;
+      backdrop-filter: blur(12px);
     }
 
     .step-card:hover {
-      transform: translateY(-5px);
+      transform: translateY(-4px);
       box-shadow: var(--shadow-lg);
       border-color: var(--color-border-hover);
     }
 
     .step-number {
-      width: 44px;
-      height: 44px;
+      width: 38px;
+      height: 38px;
       background: var(--gradient-primary);
       color: white;
-      font-family: 'Bricolage Grotesque', serif;
+      font-family: 'Syne', sans-serif;
       font-weight: 800;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 18px;
+      margin: 0 auto 16px;
+      font-size: 15px;
       box-shadow: var(--shadow-primary);
       position: relative;
       z-index: 2;
     }
 
     .step-card h3 {
-      font-family: 'Bricolage Grotesque', serif;
-      font-size: 18px;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      color: var(--color-text);
+    }
+
+    .step-card p {
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     @media (max-width: 768px) {
@@ -178,17 +198,13 @@ const localePath = (path: string) => `/${locale}${path}`;
   <script>
     // Client-side auth detection for prerendered pages
     function checkAuthState() {
-      const hasAuthCookie = document.cookie.includes('sb-');
-      const hasLocalStorage = typeof localStorage !== 'undefined' && 
-        Object.keys(localStorage).some(k => k.startsWith('sb-'));
-      
-      const isSignedIn = hasAuthCookie || hasLocalStorage;
-      
+      const isSignedIn = document.cookie.includes('ab_session=');
+
       document.querySelectorAll('[data-cta="guest"]').forEach(el => {
         (el as HTMLElement).style.display = isSignedIn ? 'none' : '';
       });
     }
-    
+
     document.addEventListener('DOMContentLoaded', checkAuthState);
     document.addEventListener('astro:page-load', checkAuthState);
   </script>

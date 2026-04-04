@@ -3,8 +3,8 @@
 
 interface ImportMetaEnv {
   readonly SITE_URL: string;
-  readonly PUBLIC_SUPABASE_URL: string;
-  readonly PUBLIC_SUPABASE_ANON_KEY: string;
+  readonly OPENROUTER_API_KEY: string;
+  readonly CONVEX_URL: string;
   readonly STRIPE_SECRET_KEY: string;
   readonly STRIPE_PRICE_ID: string;
   readonly STRIPE_PRICE_ID_MONTHLY: string;

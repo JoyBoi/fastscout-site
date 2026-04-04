@@ -238,7 +238,7 @@ The extension requires a Chromium-based browser (Chrome version 88 or later reco
 
 ### Account Requirements
 
-- A FastScout account (create one at fastscout.vercel.app)
+- An AutoBridge account (create one at autobridge.app)
 - An active subscription plan
 
 ### System Requirements

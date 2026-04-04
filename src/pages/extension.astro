@@ -1,11 +1,10 @@
 ---
 export const prerender = false;
 import Layout from "../shared/Layout.astro";
-import { getSupabaseServerClient } from "../lib/supabase";
+import { getAuthenticatedUser } from "../lib/auth";
 
-const supabase = getSupabaseServerClient(Astro);
-const { data } = await supabase.auth.getUser();
-const signedIn = !!data.user;
+const sessionUser = getAuthenticatedUser(Astro.request);
+const signedIn = !!sessionUser;
 ---
 
 <Layout title="AutoBridge Chrome Extension">

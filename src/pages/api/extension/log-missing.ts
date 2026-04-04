@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../lib/cors";
-import { getSupabaseServerClient } from "../../../lib/supabase";
+import { getAuthenticatedUser } from "../../../lib/auth";
 import { createHash } from "node:crypto";
 import { getConvexClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
@@ -15,19 +15,19 @@ export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
 
-  const supabase = getSupabaseServerClient(ctx as any);
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
+  const sessionUser = getAuthenticatedUser(ctx.request);
+  if (!sessionUser) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { "content-type": "application/json", ...corsHeaders(ctx.request) },
     });
   }
+  const userId = sessionUser.userId;
 
   const convex = getConvexClient();
   let allowed: boolean;
   try {
-    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId: userData.user.id, action: "log_missing", maxCount: 20, windowSeconds: 60 });
+    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "log_missing" });
   } catch {
     allowed = false;
   }

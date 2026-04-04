@@ -5,7 +5,7 @@ import Layout from "../../shared/Layout.astro";
 import RenewalCountdown from "../../components/RenewalCountdown.astro";
 import LoadingButton from "../../components/LoadingButton.astro";
 import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
-import { getSupabaseServerClient } from "../../lib/supabase";
+import { getAuthenticatedUser } from "../../lib/auth";
 import { getConvexClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
 import { getLocaleFromUrl, useTranslations } from "../../i18n";
@@ -14,11 +14,11 @@ const locale = getLocaleFromUrl(Astro.url);
 const t = useTranslations(locale);
 const localePath = (path: string) => `/${locale}${path}`;
 
-const supabase = getSupabaseServerClient(Astro);
-const { data } = await supabase.auth.getUser();
-if (!data.user) return Astro.redirect(localePath("/auth"));
-const userEmail = data.user?.email as string | undefined;
-const userId = data.user?.id as string | undefined;
+const sessionUser = getAuthenticatedUser(Astro.request);
+if (!sessionUser) return Astro.redirect(localePath("/auth"));
+const userId = sessionUser.userId;
+const email = sessionUser.email;
+const userEmail = email;
 
 let sub = { active: false, customerId: undefined, priceId: undefined, periodEnd: undefined } as { active: boolean; customerId?: string; priceId?: string; periodEnd?: string };
 let invoices: Array<{ id: string; status: string | null; amount_due: number; currency: string; hosted_invoice_url: string | null; invoice_pdf: string | null; created: number }> = [];
@@ -27,24 +27,15 @@ let planLabel: string | null = null;
 let renewalDays: number | null = null;
 let lastInvoiceAmount: string | null = null;
 let lastInvoiceDate: string | null = null;
-const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
-const displayName = (data.user?.user_metadata as any)?.name ?? userEmail ?? "";
+const displayName = email;
 const avatarInitial = (displayName || "U").slice(0, 1).toUpperCase();
 let invoicesCount = 0;
-
-// Fetch session separately (still uses Supabase auth)
-const { data: sessionData } = await supabase.auth.getSession();
-const accessToken = sessionData.session?.access_token;
 
 // Fetch subscription and billing data from Convex in parallel
 const convex = getConvexClient();
 const [status, billing] = await Promise.all([
-  userId
-    ? convex.query(api.subscriptions.getByUserId, { userId })
-    : Promise.resolve(null),
-  userId
-    ? convex.query(api.billingCustomers.getByUserId, { userId })
-    : Promise.resolve(null),
+  convex.query(api.subscriptions.getByUserId, { userId }),
+  convex.query(api.billingCustomers.getByUserId, { userId }),
 ]);
 
 if (status) {
@@ -57,14 +48,7 @@ if (status) {
   }
 }
 
-if (accessToken && base) {
-  const res = await fetch(`${base}/invoices`, { headers: { Authorization: `Bearer ${accessToken}` } });
-  if (res.ok) {
-    const j = await res.json() as { invoices: typeof invoices };
-    invoices = j.invoices ?? [];
-  }
-}
-if (invoices.length === 0 && userEmail) {
+if (userEmail) {
   let customerId = billing?.stripeCustomerId as string | undefined;
   if (!customerId) {
     const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
@@ -136,10 +120,10 @@ if (urlSuccess === "plan_change_scheduled") {
 
   <section class="container section" style="max-width: 1000px; padding-top: 30px;">
 
-    <div style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
+    <div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end;">
       <div>
-        <h1 style="font-family: 'Bricolage Grotesque', serif; font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; color: var(--color-text);">Dashboard</h1>
-        <p class="muted" style="font-size: 1.1rem;">Welcome back, {displayName.split(' ')[0]}</p>
+        <h1 style="font-family: 'Bricolage Grotesque', serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; color: var(--color-text);">Dashboard</h1>
+        <p class="muted" style="font-size: 14px;">Welcome back, {displayName.split(' ')[0]}</p>
       </div>
       <form action="/auth/signout" method="POST">
         <button class="btn btn-outline" style="font-size: 14px; padding: 8px 20px;">Sign out</button>
@@ -148,12 +132,12 @@ if (urlSuccess === "plan_change_scheduled") {
 
     {
       errorBanner ? (
-        <div class="card" style="border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); margin-bottom: 32px;">
-          <strong style="color:#ef4444; display:flex; align-items:center; gap:8px">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div class="card" style="border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); margin-bottom: 24px; padding: 16px;">
+          <strong style="color:#ef4444; display:flex; align-items:center; gap:6px; font-size: 13px;">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             Action Required
           </strong>
-          <p class="muted" style="margin-top:4px">{errorBanner}</p>
+          <p class="muted" style="margin-top:4px; font-size: 13px;">{errorBanner}</p>
           {
             errorCtaHref && errorCtaLabel ? (
               <div style="margin-top:12px">
@@ -167,12 +151,12 @@ if (urlSuccess === "plan_change_scheduled") {
 
     {
       successBanner ? (
-        <div class="card" style="border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); margin-bottom: 32px;">
-           <strong style="color:#22c55e; display:flex; align-items:center; gap:8px">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="card" style="border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); margin-bottom: 24px; padding: 16px;">
+           <strong style="color:#22c55e; display:flex; align-items:center; gap:6px; font-size: 13px;">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Success
           </strong>
-          <p class="muted" style="margin-top:4px">{successBanner}</p>
+          <p class="muted" style="margin-top:4px; font-size: 13px;">{successBanner}</p>
           {
             successCtaHref && successCtaLabel ? (
               <div style="margin-top:12px">
@@ -186,14 +170,14 @@ if (urlSuccess === "plan_change_scheduled") {
 
     <div class="dashboard-grid">
       <!-- Main Column -->
-      <div style="display: flex; flex-direction: column; gap: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
 
         <!-- Subscription Status Card -->
         <div class="card sub-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
             <div>
-              <p class="badge" style="margin-bottom: 12px; background: rgba(255,255,255,0.2); color: white;">Current Plan</p>
-              <h2 style="font-family: 'Bricolage Grotesque', serif; color: white; font-size: 2rem; margin: 0; letter-spacing: -0.02em;">{planLabel ?? (sub.active ? "Active Plan" : "Free Tier")}</h2>
+              <p class="badge" style="margin-bottom: 8px; background: rgba(255,255,255,0.2); color: white; font-size: 10px;">Current Plan</p>
+              <h2 style="font-family: 'Bricolage Grotesque', serif; color: white; font-size: 1.5rem; margin: 0; letter-spacing: -0.02em;">{planLabel ?? (sub.active ? "Active Plan" : "Free Tier")}</h2>
             </div>
             { sub.active ? <div class="status-pill active">Active</div> : <div class="status-pill inactive">Inactive</div> }
           </div>
@@ -203,8 +187,8 @@ if (urlSuccess === "plan_change_scheduled") {
               sub.active ? (
                 <div style="display:flex; justify-content: space-between; align-items: flex-end;">
                    <div>
-                      <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 4px;">Next billing</p>
-                      <p style="color: white; font-weight: 600; font-size: 16px;">{nextBilling}</p>
+                      <p style="color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 2px;">Next billing</p>
+                      <p style="color: white; font-weight: 600; font-size: 14px;">{nextBilling}</p>
                    </div>
                    <form action="/api/portal" method="POST">
                       <LoadingButton style="background: white; color: var(--color-primary); border: none;">Manage Billing</LoadingButton>
@@ -222,9 +206,9 @@ if (urlSuccess === "plan_change_scheduled") {
 
         <!-- Invoices -->
         <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 1.25rem; font-weight: 700;">Billing History</h3>
-            <span class="muted" style="font-size: 14px;">Last 12 months</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 1rem; font-weight: 700;">Billing History</h3>
+            <span class="muted" style="font-size: 12px;">Last 12 months</span>
           </div>
 
           {
@@ -234,16 +218,16 @@ if (urlSuccess === "plan_change_scheduled") {
                   invoices.map((i) => (
                     <li>
                       <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; background: var(--color-bg-subtle); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
-                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <div style="width: 32px; height: 32px; background: var(--color-bg-subtle); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         </div>
                         <div>
-                          <div style="font-family: 'Bricolage Grotesque', serif; font-weight: 600; font-size: 15px;">Invoice #{i.id.slice(-6).toUpperCase()}</div>
-                          <div class="muted" style="font-size: 13px;">{new Date(i.created * 1000).toLocaleDateString()}</div>
+                          <div style="font-family: 'Bricolage Grotesque', serif; font-weight: 600; font-size: 13px;">Invoice #{i.id.slice(-6).toUpperCase()}</div>
+                          <div class="muted" style="font-size: 12px;">{new Date(i.created * 1000).toLocaleDateString()}</div>
                         </div>
                       </div>
                       <div style="display: flex; align-items: center; gap: 16px;">
-                        <span style="font-family: 'Bricolage Grotesque', serif; font-weight: 600; font-size: 15px;">{(i.amount_due / 100).toFixed(2)} {i.currency.toUpperCase()}</span>
+                        <span style="font-family: 'Bricolage Grotesque', serif; font-weight: 600; font-size: 13px;">{(i.amount_due / 100).toFixed(2)} {i.currency.toUpperCase()}</span>
                         {
                           i.invoice_pdf ? (
                             <a href={i.invoice_pdf} target="_blank" rel="noreferrer" class="btn-icon" title="Download PDF">
@@ -257,8 +241,8 @@ if (urlSuccess === "plan_change_scheduled") {
                 }
               </ul>
             ) : (
-              <div style="text-align: center; padding: 40px 0;">
-                <p class="muted">No invoices found.</p>
+              <div style="text-align: center; padding: 28px 0;">
+                <p class="muted" style="font-size: 13px;">No invoices found.</p>
               </div>
             )
           }
@@ -266,27 +250,27 @@ if (urlSuccess === "plan_change_scheduled") {
       </div>
 
       <!-- Side Column -->
-      <div style="display: flex; flex-direction: column; gap: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
         <!-- Profile Card -->
         <div class="card">
-          <div style="display:flex; align-items:center; gap:16px; margin-bottom: 20px;">
-            <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--gradient-primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size: 24px; color: white; box-shadow: var(--shadow-primary);">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--gradient-primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size: 20px; color: white; box-shadow: var(--shadow-primary);">
               {avatarInitial}
             </div>
             <div>
-              <div style="font-weight:700; font-size: 1.1rem; line-height: 1.2;">{displayName}</div>
-              <div class="muted" style="font-size:14px">{userEmail}</div>
+              <div style="font-weight:700; font-size: 1rem; line-height: 1.2;">{displayName}</div>
+              <div class="muted" style="font-size:13px">{userEmail}</div>
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
-            <div style="background: var(--color-bg-subtle); padding: 14px; border-radius: var(--radius); text-align: center; border: 1px solid var(--color-border);">
-              <div class="muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700;">Invoices</div>
-              <div style="font-family: 'Bricolage Grotesque', serif; font-size: 28px; font-weight: 800; color: var(--color-text); margin-top: 4px;">{invoicesCount}</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+            <div style="background: var(--color-bg-subtle); padding: 10px; border-radius: var(--radius); text-align: center; border: 1px solid var(--color-border);">
+              <div class="muted" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700;">Invoices</div>
+              <div style="font-family: 'Bricolage Grotesque', serif; font-size: 20px; font-weight: 800; color: var(--color-text); margin-top: 2px;">{invoicesCount}</div>
             </div>
-             <div style="background: var(--color-bg-subtle); padding: 14px; border-radius: var(--radius); text-align: center; border: 1px solid var(--color-border);">
-              <div class="muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700;">Next Bill</div>
-              <div style="font-family: 'Bricolage Grotesque', serif; font-size: 28px; font-weight: 800; color: var(--color-text); margin-top: 4px;">{renewalDays ?? "—"}d</div>
+             <div style="background: var(--color-bg-subtle); padding: 10px; border-radius: var(--radius); text-align: center; border: 1px solid var(--color-border);">
+              <div class="muted" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700;">Next Bill</div>
+              <div style="font-family: 'Bricolage Grotesque', serif; font-size: 20px; font-weight: 800; color: var(--color-text); margin-top: 2px;">{renewalDays ?? "—"}d</div>
             </div>
           </div>
         </div>
@@ -294,8 +278,8 @@ if (urlSuccess === "plan_change_scheduled") {
         <!-- Quick Actions -->
         { sub.active ? (
           <div class="card">
-            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 16px; font-weight: 700; margin-bottom: 16px;">Quick Actions</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
+            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 14px; font-weight: 700; margin-bottom: 12px;">Quick Actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
               <form action="/api/portal" method="POST">
                  <LoadingButton variant="outline" style="width: 100%; justify-content: flex-start;">
                     Update Payment Method
@@ -311,9 +295,9 @@ if (urlSuccess === "plan_change_scheduled") {
           </div>
         ) : null }
 
-        <div style="padding: 20px; text-align: center; background: var(--color-bg-subtle); border-radius: var(--radius); border: 1px solid var(--color-border);">
-           <p class="muted" style="font-size: 14px; margin-bottom: 8px;">Need help?</p>
-           <a href="mailto:support@fastscout.app" style="font-weight: 600; color: var(--color-primary); font-size: 14px;">Contact Support</a>
+        <div style="padding: 14px; text-align: center; background: var(--color-bg-subtle); border-radius: var(--radius); border: 1px solid var(--color-border);">
+           <p class="muted" style="font-size: 13px; margin-bottom: 6px;">Need help?</p>
+           <a href="mailto:support@fastscout.app" style="font-weight: 600; color: var(--color-primary); font-size: 13px;">Contact Support</a>
         </div>
       </div>
 
@@ -324,13 +308,13 @@ if (urlSuccess === "plan_change_scheduled") {
     .dashboard-grid {
       display: grid;
       grid-template-columns: 5fr 3fr;
-      gap: 28px;
+      gap: 24px;
     }
     .sub-card {
       background: var(--gradient-primary);
       color: white;
       border: none;
-      min-height: 220px;
+      min-height: 180px;
       display: flex;
       flex-direction: column;
       box-shadow: 0 16px 40px -8px rgba(6, 182, 212, 0.3);
@@ -374,7 +358,7 @@ if (urlSuccess === "plan_change_scheduled") {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 0;
+      padding: 12px 0;
       border-bottom: 1px solid var(--color-border);
       transition: background 0.15s ease;
     }
@@ -382,8 +366,8 @@ if (urlSuccess === "plan_change_scheduled") {
     .invoice-list li:first-child { padding-top: 0; }
 
     .btn-icon {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;

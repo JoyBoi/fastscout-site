@@ -10,6 +10,7 @@
 
 import type * as appConfig from "../appConfig.js";
 import type * as billingCustomers from "../billingCustomers.js";
+import type * as crons from "../crons.js";
 import type * as extensionData from "../extensionData.js";
 import type * as makes from "../makes.js";
 import type * as missingEntries from "../missingEntries.js";
@@ -17,6 +18,7 @@ import type * as models from "../models.js";
 import type * as rateLimit from "../rateLimit.js";
 import type * as reports from "../reports.js";
 import type * as subscriptions from "../subscriptions.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -27,6 +29,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   appConfig: typeof appConfig;
   billingCustomers: typeof billingCustomers;
+  crons: typeof crons;
   extensionData: typeof extensionData;
   makes: typeof makes;
   missingEntries: typeof missingEntries;
@@ -34,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   rateLimit: typeof rateLimit;
   reports: typeof reports;
   subscriptions: typeof subscriptions;
+  users: typeof users;
 }>;
 
 /**

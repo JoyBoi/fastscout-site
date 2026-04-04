@@ -1,9 +1,10 @@
 /.astro
 /.env
+/.env.*
 /dist
 /ref
 /node_modules
 /supabase
-/.vercel
 integration.md
 video
+.env.local

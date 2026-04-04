@@ -2,7 +2,7 @@
 export const prerender = false;
 
 import Layout from "../../../shared/Layout.astro";
-import { getSupabaseServerClient } from "../../../lib/supabase";
+import { getAuthenticatedUser } from "../../../lib/auth";
 import { getLocaleFromUrl, useTranslations } from "../../../i18n";
 
 const locale = getLocaleFromUrl(Astro.url);
@@ -14,75 +14,285 @@ const error = qs.get("error");
 const message = qs.get("message");
 const mode = qs.get("mode") === "signup" ? "signup" : "signin";
 const isSignup = mode === "signup";
-const supabase = getSupabaseServerClient(Astro);
-const { data } = await supabase.auth.getUser();
-if (data.user) {
+const sessionUser = getAuthenticatedUser(Astro.request);
+if (sessionUser) {
   return Astro.redirect(localePath("/dashboard"));
 }
 ---
 <Layout title={t.auth.signIn} locale={locale}>
-  <section style="max-width: 480px; margin: 0 auto; padding-top: 20px;">
-    <div class="animate-enter" style="text-align: center; margin-bottom: 32px;">
-      <div style="width: 56px; height: 56px; background: var(--gradient-primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: var(--shadow-primary);">
-        <img src="/logo.png" alt="" style="width: 32px; height: 32px; filter: brightness(10);" />
-      </div>
-      <h2 style="font-family: 'Bricolage Grotesque', serif; font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px;">{t.auth.welcome}</h2>
-      <p class="muted" style="font-size: 15px;">Sign in to access your AutoBridge dashboard</p>
-    </div>
+  <section class="auth-page">
+    <div class="auth-glow"></div>
 
-    { error ? (
-      <div class="card animate-enter stagger-1" style="border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); margin-bottom: 20px;">
-        <strong style="color:#ef4444; font-size: 14px;">{t.common.error}</strong>
-        <p style="margin-top: 4px; font-size: 14px; color: var(--color-text-muted);">{error}</p>
+    <div class="auth-wrapper animate-enter">
+      <div class="auth-header">
+        <div class="auth-logo-wrap">
+          <img src="/logo.png" alt="" width="36" height="36" style="filter: brightness(10);" />
+        </div>
+        <h1 class="auth-title">{t.auth.welcome}</h1>
+        <p class="auth-subtitle">Sign in to access your AutoBridge dashboard</p>
       </div>
-    ) : null }
-    {
-      message ? (
-      <div class="card animate-enter stagger-1" style="border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); margin-bottom: 20px;">
-        <strong style="color:#22c55e; font-size: 14px;">{t.common.notice}</strong>
-        <p style="margin-top: 4px; font-size: 14px; color: var(--color-text-muted);">{message}</p>
-      </div>
-      ) : null
-    }
 
-    <div class="card animate-enter stagger-1" style="padding: 36px; border-radius: var(--radius-lg);">
-      <!-- Email/Password Form -->
-      <form action={isSignup ? "/auth/email-signup" : "/auth/email-signin"} method="POST" style="display: grid; gap: 16px;">
-        <label>
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 6px;">{t.auth.email}</div>
-          <input name="email" type="email" required placeholder="you@example.com" />
-        </label>
-        <label>
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 6px;">{t.auth.password}</div>
-          <input name="password" type="password" minlength="6" required placeholder="Min. 6 characters" />
-        </label>
-        <input type="hidden" name="locale" value={locale} />
-        <button class="btn btn-primary" type="submit" style="width: 100%; height: 46px; margin-top: 4px; font-size: 15px;">
-          {isSignup ? t.auth.createAccount : t.auth.signInLink}
-        </button>
-      </form>
+      { error ? (
+        <div class="auth-alert auth-alert--error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <span>{error}</span>
+        </div>
+      ) : null }
 
-      <p class="muted" style="margin-top: 20px; font-size: 14px; text-align: center;">
-        {
-          isSignup ? (
-            <>
-              {t.auth.hasAccount}
-              {" "}
-              <a href={localePath("/auth?mode=signin")} style="color: var(--color-primary); font-weight: 600;">{t.auth.signInLink}</a>
-            </>
+      { message ? (
+        <div class="auth-alert auth-alert--success">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>{message}</span>
+        </div>
+      ) : null }
+
+      <div class="auth-card animate-enter stagger-1">
+        <form action={isSignup ? "/auth/email-signup" : "/auth/email-signin"} method="POST" class="auth-form">
+          <div class="form-field">
+            <label for="email">{t.auth.email}</label>
+            <input id="email" name="email" type="email" required placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <div class="form-field">
+            <label for="password">{t.auth.password}</label>
+            <input id="password" name="password" type="password" minlength="8" required placeholder="Min. 8 characters" autocomplete={isSignup ? "new-password" : "current-password"} />
+          </div>
+          <input type="hidden" name="locale" value={locale} />
+          <button class="auth-submit" type="submit">
+            {isSignup ? t.auth.createAccount : t.auth.signInLink}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </form>
+
+        <div class="auth-divider"><span>or</span></div>
+
+        <p class="auth-switch">
+          {isSignup ? (
+            <>{t.auth.hasAccount} <a href={localePath("/auth?mode=signin")}>{t.auth.signInLink}</a></>
           ) : (
-            <>
-              {t.auth.noAccount}
-              {" "}
-              <a href={localePath("/auth?mode=signup")} style="color: var(--color-primary); font-weight: 600;">{t.auth.createAccount}</a>
-            </>
-          )
-        }
+            <>{t.auth.noAccount} <a href={localePath("/auth?mode=signup")}>{t.auth.createAccount}</a></>
+          )}
+        </p>
+      </div>
+
+      <p class="auth-legal">
+        By signing in, you agree to our <a href={localePath("/terms")}>Terms</a> and <a href={localePath("/privacy")}>Privacy Policy</a>.
       </p>
     </div>
-
-    <p style="text-align: center; margin-top: 24px; font-size: 12px; color: var(--color-text-dim);">
-      By signing in, you agree to our <a href={localePath("/terms")} style="text-decoration: underline;">Terms</a> and <a href={localePath("/privacy")} style="text-decoration: underline;">Privacy Policy</a>.
-    </p>
   </section>
+
+  <style>
+    .auth-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 200px);
+      position: relative;
+      padding: 40px 20px;
+    }
+
+    .auth-glow {
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(16, 185, 129, 0.04) 40%, transparent 70%);
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    .auth-wrapper {
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .auth-logo-wrap {
+      width: 60px;
+      height: 60px;
+      background: var(--gradient-primary);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 32px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(6, 182, 212, 0.1);
+    }
+
+    .auth-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .auth-alert {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    .auth-alert--error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    .auth-alert--success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .auth-card {
+      background: rgba(24, 24, 27, 0.6);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .form-field input {
+      padding: 12px 16px;
+      background: rgba(17, 17, 19, 0.8);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      color: var(--color-text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-field input::placeholder {
+      color: var(--color-text-dim);
+    }
+
+    .form-field input:focus {
+      border-color: rgba(6, 182, 212, 0.5);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+      background: rgba(17, 17, 19, 1);
+    }
+
+    .auth-submit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px 24px;
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-top: 4px;
+    }
+
+    .auth-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.25);
+    }
+
+    .auth-submit:active {
+      transform: translateY(0);
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .auth-divider span {
+      font-size: 12px;
+      color: var(--color-text-dim);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .auth-switch {
+      text-align: center;
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+
+    .auth-switch a {
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    .auth-switch a:hover {
+      color: #22d3ee;
+    }
+
+    .auth-legal {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--color-text-dim);
+    }
+
+    .auth-legal a {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .auth-legal a:hover {
+      color: var(--color-text-muted);
+    }
+  </style>
 </Layout>

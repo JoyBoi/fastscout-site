@@ -2,79 +2,296 @@
 export const prerender = false;
 
 import Layout from "../../shared/Layout.astro";
-import { getSupabaseServerClient } from "../../lib/supabase";
+import { getAuthenticatedUser } from "../../lib/auth";
 
 const qs = new URL(Astro.request.url).searchParams;
 const error = qs.get("error");
 const message = qs.get("message");
 const mode = qs.get("mode") === "signup" ? "signup" : "signin";
 const isSignup = mode === "signup";
-const supabase = getSupabaseServerClient(Astro);
-const { data } = await supabase.auth.getUser();
-if (data.user) {
-  const siteUrl = import.meta.env.SITE_URL as string;
-  return Astro.redirect(`${siteUrl}/dashboard`);
+const sessionUser = getAuthenticatedUser(Astro.request);
+if (sessionUser) {
+  return Astro.redirect("/dashboard");
 }
 ---
 <Layout title="Sign in to AutoBridge">
-  <section class="grid fade-in" style="max-width:720px; margin:0 auto">
-    <h2 style="text-align:center">Welcome</h2>
-    { error ? (
-      <div class="card" style="border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08);">
-        <strong style="color:#ef4444">Error</strong>
-        <p class="lead" style="margin-top:6px">{error}</p>
-      </div>
-    ) : null }
-    {
-      message ? (
-      <div class="card" style="border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08);">
-        <strong style="color:#22c55e">Notice</strong>
-        <p class="lead" style="margin-top:6px">{message}</p>
-      </div>
-      ) : null
-    }
+  <section class="auth-page">
+    <div class="auth-glow"></div>
 
-    <div class="card" style="max-width:480px; margin:0 auto">
-      <h3 style="margin-top:0">{isSignup ? "Create account" : "Sign in"}</h3>
-      <form action={isSignup ? "/auth/email-signup" : "/auth/email-signin"} method="POST" style="display:grid; gap:12px">
-        <label>
-          <div class="muted" style="margin-bottom:4px">Email</div>
-          <input
-            name="email"
-            type="email"
-            required
-            style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--color-border); background: var(--color-bg-card)"
-          />
-        </label>
-        <label>
-          <div class="muted" style="margin-bottom:4px">Password</div>
-          <input
-            name="password"
-            type="password"
-            minlength="6"
-            required
-            style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--color-border); background: var(--color-bg-card)"
-          />
-        </label>
-        <button class="btn btn-primary" type="submit">{isSignup ? "Sign up" : "Sign in"}</button>
-      </form>
-      <p class="muted" style="margin-top:16px; font-size:14px">
-        {
-          isSignup ? (
-            <>
-              Already have an account?
-              {" "}
-              <a href="/auth?mode=signin">Sign in</a>
-            </>
+    <div class="auth-wrapper animate-enter">
+      <!-- Logo + heading -->
+      <div class="auth-header">
+        <div class="auth-logo-wrap">
+          <img src="/logo.png" alt="" width="36" height="36" style="filter: brightness(10);" />
+        </div>
+        <h1 class="auth-title">{isSignup ? "Create your account" : "Welcome back"}</h1>
+        <p class="auth-subtitle">{isSignup ? "Start your AutoBridge journey" : "Sign in to your AutoBridge dashboard"}</p>
+      </div>
+
+      { error ? (
+        <div class="auth-alert auth-alert--error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <span>{error}</span>
+        </div>
+      ) : null }
+
+      { message ? (
+        <div class="auth-alert auth-alert--success">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>{message}</span>
+        </div>
+      ) : null }
+
+      <!-- Form card -->
+      <div class="auth-card animate-enter stagger-1">
+        <form action={isSignup ? "/auth/email-signup" : "/auth/email-signin"} method="POST" class="auth-form">
+          <div class="form-field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <div class="form-field">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" minlength="8" required placeholder="Min. 8 characters" autocomplete={isSignup ? "new-password" : "current-password"} />
+          </div>
+          <button class="auth-submit" type="submit">
+            {isSignup ? "Create account" : "Sign in"}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </form>
+
+        <div class="auth-divider">
+          <span>or</span>
+        </div>
+
+        <p class="auth-switch">
+          {isSignup ? (
+            <>Already have an account? <a href="/auth?mode=signin">Sign in</a></>
           ) : (
-            <>
-              Don&apos;t have an account?
-              {" "}
-              <a href="/auth?mode=signup">Create one</a>
-            </>
-          )
-        }
+            <>Don&apos;t have an account? <a href="/auth?mode=signup">Create one</a></>
+          )}
+        </p>
+      </div>
+
+      <p class="auth-legal">
+        By continuing, you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.
       </p>
     </div>
   </section>
+
+  <style>
+    .auth-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 200px);
+      position: relative;
+      padding: 40px 20px;
+    }
+
+    .auth-glow {
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(16, 185, 129, 0.04) 40%, transparent 70%);
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    .auth-wrapper {
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .auth-logo-wrap {
+      width: 60px;
+      height: 60px;
+      background: var(--gradient-primary);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 32px rgba(6, 182, 212, 0.3), 0 0 0 1px rgba(6, 182, 212, 0.1);
+    }
+
+    .auth-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .auth-alert {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    .auth-alert--error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    .auth-alert--success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .auth-card {
+      background: rgba(24, 24, 27, 0.6);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .form-field input {
+      padding: 12px 16px;
+      background: rgba(17, 17, 19, 0.8);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      color: var(--color-text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-field input::placeholder {
+      color: var(--color-text-dim);
+    }
+
+    .form-field input:focus {
+      border-color: rgba(6, 182, 212, 0.5);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+      background: rgba(17, 17, 19, 1);
+    }
+
+    .auth-submit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px 24px;
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-top: 4px;
+    }
+
+    .auth-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.25);
+    }
+
+    .auth-submit:active {
+      transform: translateY(0);
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .auth-divider span {
+      font-size: 12px;
+      color: var(--color-text-dim);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .auth-switch {
+      text-align: center;
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+
+    .auth-switch a {
+      color: var(--color-primary);
+      font-weight: 600;
+      transition: color 0.15s;
+    }
+
+    .auth-switch a:hover {
+      color: #22d3ee;
+    }
+
+    .auth-legal {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--color-text-dim);
+    }
+
+    .auth-legal a {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .auth-legal a:hover {
+      color: var(--color-text-muted);
+    }
+  </style>
 </Layout>

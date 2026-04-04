@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import jwt from "jsonwebtoken";
 import { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
-import { getSupabaseServerClient } from "../../lib/supabase";
+import { getAuthenticatedUser } from "../../lib/auth";
 import { corsHeaders, preflight } from "../../lib/cors";
 import { getConvexClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
@@ -11,16 +11,15 @@ export const prerender = false;
 export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
-  const supabase = getSupabaseServerClient(ctx as any);
-  const { data } = await supabase.auth.getUser();
-  const email = data.user?.email;
-  const userId = data.user?.id;
-  if (!email || !userId) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+  const sessionUser = getAuthenticatedUser(ctx.request);
+  if (!sessionUser) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+  const email = sessionUser.email;
+  const userId = sessionUser.userId;
 
   const convex = getConvexClient();
   let allowed: boolean;
   try {
-    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "token", maxCount: 10, windowSeconds: 300 });
+    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "token" });
   } catch {
     allowed = false;
   }

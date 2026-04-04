@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 export const create = mutation({
   args: {
-    userId: v.string(),
+    userId: v.optional(v.string()),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
     type: v.string(),

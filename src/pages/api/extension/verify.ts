@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../lib/cors";
-import { getSupabaseServerClient } from "../../../lib/supabase";
+import { getAuthenticatedUser } from "../../../lib/auth";
 import { getConvexClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
 
@@ -98,21 +98,19 @@ export const POST: APIRoute = async (ctx) => {
   const headers = { "content-type": "application/json", ...corsHeaders(ctx.request) };
 
   // Auth
-  const supabase = getSupabaseServerClient(ctx as any);
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
+  const sessionUser = getAuthenticatedUser(ctx.request);
+  if (!sessionUser) {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
   }
+  const userId = sessionUser.userId;
 
   // Rate limit
   const convex = getConvexClient();
   let allowed: boolean;
   try {
     allowed = await convex.mutation(api.rateLimit.checkRateLimit, {
-      userId: userData.user.id,
+      userId,
       action: "extension_verify",
-      maxCount: 30,
-      windowSeconds: 60,
     });
   } catch {
     allowed = false;
@@ -155,7 +153,7 @@ export const POST: APIRoute = async (ctx) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-flash-2.0",
+        model: "google/gemini-2.0-flash-001",
         temperature: 0,
         max_tokens: 500,
         response_format: { type: "json_object" },
@@ -169,7 +167,7 @@ export const POST: APIRoute = async (ctx) => {
     if (!orResponse.ok) {
       const errText = await orResponse.text().catch(() => "");
       return new Response(
-        JSON.stringify({ error: "ai_error", detail: `${orResponse.status}: ${errText.slice(0, 200)}` }),
+        JSON.stringify({ error: "ai_error" }),
         { status: 502, headers },
       );
     }

@@ -1,38 +1,39 @@
 import type { APIRoute } from "astro";
-import { getSupabaseServerClient } from "../../lib/supabase";
-import { corsHeaders, preflight } from "../../lib/cors";
+import bcrypt from "bcryptjs";
+import { getConvexClient } from "../../lib/convex";
+import { api } from "../../../convex/_generated/api";
+import { makeSessionCookieHeader } from "../../lib/auth";
 
 export const prerender = false;
 
 export const POST: APIRoute = async (ctx) => {
-  const supabase = getSupabaseServerClient(ctx as any);
-  let email = "";
-  let password = "";
-  try {
-    const form = await ctx.request.formData();
-    email = String(form.get("email") ?? "").trim();
-    password = String(form.get("password") ?? "");
-  } catch {}
-  if (!email || !password) return new Response(null, { status: 302, headers: { Location: "/auth?error=missing_credentials" } });
+  const formData = await ctx.request.formData();
+  const email = formData.get("email")?.toString()?.trim()?.toLowerCase();
+  const password = formData.get("password")?.toString();
+  const locale = formData.get("locale")?.toString() || "fr";
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  const siteUrl = import.meta.env.SITE_URL as string;
-  if (error || !data?.session) return new Response(null, { status: 302, headers: { Location: "/auth?error=invalid_credentials" } });
-  try {
-    const u = new URL(siteUrl);
-    const host = u.hostname;
-    const isLocal = host === "localhost" || host.endsWith(".localhost");
-    const domain = isLocal ? undefined : `.${host}`;
-    const secure = u.protocol === "https:";
-    const sameSite = secure ? "none" : "lax";
-    ctx.cookies.set("fs_session", "1", {
-      path: "/",
-      domain,
-      secure,
-      sameSite,
-      httpOnly: true,
-      maxAge: 60 * 60 * 24 * 365,
-    });
-  } catch {}
-  return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard` } });
+  if (!email || !password) {
+    return ctx.redirect(`/${locale}/auth?error=missing_fields`);
+  }
+
+  const convex = getConvexClient();
+  const user = await convex.query(api.users.getByEmail, { email });
+
+  if (!user || !user.passwordHash) {
+    return ctx.redirect(`/${locale}/auth?error=invalid_credentials`);
+  }
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) {
+    return ctx.redirect(`/${locale}/auth?error=invalid_credentials`);
+  }
+
+  const cookieHeader = makeSessionCookieHeader(ctx.request, user._id, user.email);
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `/${locale}/dashboard`,
+      "Set-Cookie": cookieHeader,
+    },
+  });
 };

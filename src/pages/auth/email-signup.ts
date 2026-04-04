@@ -1,45 +1,48 @@
 import type { APIRoute } from "astro";
-import { getSupabaseServerClient } from "../../lib/supabase";
-import { corsHeaders, preflight } from "../../lib/cors";
+import bcrypt from "bcryptjs";
+import { getConvexClient } from "../../lib/convex";
+import { api } from "../../../convex/_generated/api";
+import { makeSessionCookieHeader } from "../../lib/auth";
 
 export const prerender = false;
 
 export const POST: APIRoute = async (ctx) => {
-  const supabase = getSupabaseServerClient(ctx as any);
-  let email = "";
-  let password = "";
-  try {
-    const form = await ctx.request.formData();
-    email = String(form.get("email") ?? "").trim();
-    password = String(form.get("password") ?? "");
-  } catch {}
-  if (!email || !password) return new Response(null, { status: 302, headers: { Location: "/auth?error=missing_credentials" } });
+  const formData = await ctx.request.formData();
+  const email = formData.get("email")?.toString()?.trim()?.toLowerCase();
+  const password = formData.get("password")?.toString();
+  const locale = formData.get("locale")?.toString() || "fr";
 
-  const siteUrl = import.meta.env.SITE_URL as string;
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { emailRedirectTo: `${siteUrl}/auth/callback` },
-  });
-  if (error) return new Response(null, { status: 302, headers: { Location: "/auth?error=signup_failed" } });
-  if (data?.session) {
-    try {
-      const u = new URL(siteUrl);
-      const host = u.hostname;
-      const isLocal = host === "localhost" || host.endsWith(".localhost");
-      const domain = isLocal ? undefined : `.${host}`;
-      const secure = u.protocol === "https:";
-      const sameSite = secure ? "none" : "lax";
-      ctx.cookies.set("fs_session", "1", {
-        path: "/",
-        domain,
-        secure,
-        sameSite,
-        httpOnly: true,
-        maxAge: 60 * 60 * 24 * 365,
-      });
-    } catch {}
-    return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard` } });
+  if (!email || !password) {
+    return ctx.redirect(`/${locale}/auth?error=missing_fields`);
   }
-  return new Response(null, { status: 302, headers: { Location: "/auth?message=Check your inbox to confirm email" } });
+
+  if (password.length < 8) {
+    return ctx.redirect(`/${locale}/auth?error=weak_password&mode=signup`);
+  }
+
+  const convex = getConvexClient();
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  let userId: string;
+  try {
+    userId = await convex.mutation(api.users.create, {
+      email,
+      passwordHash,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("email_exists")) {
+      return ctx.redirect(`/${locale}/auth?error=email_exists&mode=signup`);
+    }
+    return ctx.redirect(`/${locale}/auth?error=signup_failed&mode=signup`);
+  }
+
+  const cookieHeader = makeSessionCookieHeader(ctx.request, userId, email);
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `/${locale}/dashboard`,
+      "Set-Cookie": cookieHeader,
+    },
+  });
 };

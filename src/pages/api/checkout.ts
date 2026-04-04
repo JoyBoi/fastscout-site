@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
-import { getSupabaseServerClient } from "../../lib/supabase";
+import jwt from "jsonwebtoken";
+import { getAuthenticatedUser } from "../../lib/auth";
 import stripe, { findActiveSubscriptionByEmail } from "../../lib/stripe";
 import { preflight, corsHeaders } from "../../lib/cors";
 import { getConvexClient } from "../../lib/convex";
@@ -10,10 +11,10 @@ export const prerender = false;
 export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
-  const supabase = getSupabaseServerClient(ctx as any);
-  const { data: { session } } = await supabase.auth.getSession();
-  const accessToken = session?.access_token;
-  if (!accessToken) return new Response(null, { status: 302, headers: { Location: "/auth?mode=signup" } });
+  const sessionUser = getAuthenticatedUser(ctx.request);
+  if (!sessionUser) return new Response(null, { status: 302, headers: { Location: "/auth?mode=signup" } });
+  const userId = sessionUser.userId;
+  const email = sessionUser.email;
 
   const form = await ctx.request.formData();
   const plan = (form.get("plan") as string | null) ?? null;
@@ -30,10 +31,9 @@ export const POST: APIRoute = async (ctx) => {
   else priceId = fallback;
 
   const convex = getConvexClient();
-  const userId = session.user?.id;
   let allowed: boolean;
   try {
-    allowed = userId ? await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "checkout", maxCount: 3, windowSeconds: 60 }) : false;
+    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "checkout" });
   } catch {
     allowed = false;
   }
@@ -44,6 +44,8 @@ export const POST: APIRoute = async (ctx) => {
   }
   const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
   if (base && /^https?:\/\/.*/.test(base)) {
+    const secret = import.meta.env.JWT_SECRET as string;
+    const accessToken = jwt.sign({ userId, email }, secret, { expiresIn: "5m" });
     const res = await fetch(`${base}/create-checkout-session`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
@@ -55,9 +57,6 @@ export const POST: APIRoute = async (ctx) => {
     }
   }
 
-  const { data: user } = await supabase.auth.getUser();
-  const email = user.user?.email;
-  if (!email) return new Response(null, { status: 302, headers: { Location: "/auth", ...corsHeaders(ctx.request) } as Record<string, string> });
   const existing = await findActiveSubscriptionByEmail(email);
   if (existing.active) {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=already_subscribed`, ...corsHeaders(ctx.request) } as Record<string, string> });
@@ -80,11 +79,9 @@ export const POST: APIRoute = async (ctx) => {
 export const GET: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
-  const supabase = getSupabaseServerClient(ctx as any);
-  const { data: { session } } = await supabase.auth.getSession();
-  const accessToken = session?.access_token;
+  const sessionUser = getAuthenticatedUser(ctx.request);
   const siteUrl = import.meta.env.SITE_URL as string;
-  if (!accessToken) return new Response(null, { status: 302, headers: { Location: "/auth?mode=signup" } });
+  if (!sessionUser) return new Response(null, { status: 302, headers: { Location: "/auth?mode=signup" } });
   return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing`, ...corsHeaders(ctx.request) } as Record<string, string> });
 };
 
