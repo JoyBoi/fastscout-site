@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { getSupabaseServerClient } from "../../lib/supabase";
 import { corsHeaders, preflight } from "../../lib/cors";
+import { getConvexClient } from "../../lib/convex";
+import { api } from "../../../convex/_generated/api";
 
 export const prerender = false;
 
@@ -34,18 +36,17 @@ export const POST: APIRoute = async (ctx) => {
   const validTypes = ['bug', 'feature_request', 'other'];
   const finalType = validTypes.includes(type) ? type : 'bug';
 
-  const row = {
-    user_id: user?.id || null,
-    title: title || null,
-    description,
-    type: finalType,
-    source: source || 'webapp',
-    metadata: metadata || {},
-  };
-
-  const { error } = await supabase.from("reports").insert(row);
-
-  if (error) {
+  const convex = getConvexClient();
+  try {
+    await convex.mutation(api.reports.create, {
+      userId: user?.id || undefined,
+      title: title || undefined,
+      description,
+      type: finalType,
+      source: source || 'webapp',
+      metadata: metadata || {},
+    });
+  } catch (error: any) {
     console.error("Report insert error:", error);
     return new Response(JSON.stringify({ error: "insert_failed", details: error.message }), {
       status: 500,

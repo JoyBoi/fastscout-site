@@ -1,11 +1,11 @@
 import { defineConfig } from "astro/config";
-import vercel from "@astrojs/vercel";
+import cloudflare from "@astrojs/cloudflare";
 
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  output: "static",
-  adapter: vercel(),
+  output: "server",
+  adapter: cloudflare(),
 
   i18n: {
     defaultLocale: "fr",

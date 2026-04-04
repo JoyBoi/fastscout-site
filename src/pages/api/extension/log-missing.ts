@@ -2,6 +2,8 @@ import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../lib/cors";
 import { getSupabaseServerClient } from "../../../lib/supabase";
 import { createHash } from "node:crypto";
+import { getConvexClient } from "../../../lib/convex";
+import { api } from "../../../../convex/_generated/api";
 
 function normalize(s: string | undefined | null) {
   return (s ?? "").trim().toLowerCase();
@@ -22,12 +24,14 @@ export const POST: APIRoute = async (ctx) => {
     });
   }
 
-  const { data: allowed, error: rlError } = await supabase.rpc("check_rate_limit", {
-    action: "log_missing",
-    max_count: 20,
-    window_seconds: 60,
-  });
-  if (rlError || !allowed) {
+  const convex = getConvexClient();
+  let allowed: boolean;
+  try {
+    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId: userData.user.id, action: "log_missing", maxCount: 20, windowSeconds: 60 });
+  } catch {
+    allowed = false;
+  }
+  if (!allowed) {
     return new Response(JSON.stringify({ error: "rate_limited" }), {
       status: 429,
       headers: { "content-type": "application/json", ...corsHeaders(ctx.request) },
@@ -59,21 +63,18 @@ export const POST: APIRoute = async (ctx) => {
 
   const fpBase = [type, normalize(makeId), normalize(makeName), normalize(modelName), normalize(platform), normalize(url)].join("|");
   const fingerprint = createHash("sha256").update(fpBase).digest("hex");
-  const now = new Date().toISOString();
 
-  const row = {
-    type,
-    make_id: makeId ?? null,
-    make_name: makeName ?? null,
-    model_name: modelName ?? null,
-    platform: platform ?? null,
-    page_url: url ?? null,
-    fingerprint,
-    last_seen_at: now,
-  };
-
-  const { error } = await supabase.from("missing_entries").upsert(row, { onConflict: "fingerprint" });
-  if (error) {
+  try {
+    await convex.mutation(api.missingEntries.upsert, {
+      fingerprint,
+      type,
+      makeId,
+      makeName,
+      modelName,
+      platform,
+      pageUrl: url,
+    });
+  } catch {
     return new Response(JSON.stringify({ error: "upsert_failed" }), {
       status: 500,
       headers: { "content-type": "application/json", ...corsHeaders(ctx.request) },

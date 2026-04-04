@@ -32,51 +32,56 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
     <link rel="icon" href="/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <ViewTransitions />
     <style is:inline>
       :root {
-        color-scheme: light;
-        /* Warm Stone Palette */
-        --color-bg: #FAFAF9;
-        --color-bg-subtle: #F5F5F4;
-        --color-bg-card: #FFFFFF;
-        --color-bg-elevated: #FFFFFF;
+        color-scheme: dark;
 
-        --color-text: #1C1917;
-        --color-text-muted: #78716C;
-        --color-text-dim: #A8A29E;
+        /* Backgrounds */
+        --color-bg: #09090B;
+        --color-bg-subtle: #111113;
+        --color-bg-card: #18181B;
+        --color-bg-elevated: #1F1F23;
 
-        /* Brand */
-        --gradient-primary: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
-        --gradient-success: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
-        --gradient-glow: radial-gradient(circle at center, rgba(37, 99, 235, 0.06) 0%, transparent 70%);
+        /* Text */
+        --color-text: #FAFAFA;
+        --color-text-muted: #A1A1AA;
+        --color-text-dim: #52525B;
 
-        --color-primary: #2563EB;
-        --color-primary-light: rgba(37, 99, 235, 0.08);
-        --color-primary-glow: rgba(37, 99, 235, 0.2);
+        /* Accent — Cyan/Teal */
+        --color-primary: #06B6D4;
+        --color-primary-light: rgba(6, 182, 212, 0.1);
+        --color-primary-glow: rgba(6, 182, 212, 0.25);
+
+        /* Gradients */
+        --gradient-primary: linear-gradient(135deg, #06B6D4 0%, #10B981 100%);
+        --gradient-subtle: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+        --gradient-glow: radial-gradient(circle at center, rgba(6, 182, 212, 0.08) 0%, transparent 70%);
+
+        /* Semantic */
         --color-accent: #F59E0B;
         --color-accent-light: rgba(245, 158, 11, 0.1);
-        --color-border: #E7E5E4;
-        --color-border-hover: #D6D3D1;
         --color-success: #10B981;
         --color-danger: #EF4444;
+        --color-border: rgba(255, 255, 255, 0.06);
+        --color-border-hover: rgba(255, 255, 255, 0.12);
+
+        /* Shadows — Dark mode */
+        --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+        --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.6);
+        --shadow-glow: 0 0 40px rgba(6, 182, 212, 0.15);
+        --shadow-primary: 0 8px 32px rgba(6, 182, 212, 0.2);
+        --shadow-float: 0 20px 40px rgba(0, 0, 0, 0.5);
 
         /* Radius */
-        --radius: 16px;
+        --radius: 12px;
         --radius-sm: 8px;
-        --radius-lg: 24px;
+        --radius-lg: 20px;
         --radius-full: 100px;
-
-        /* Shadows — warmer, with depth */
-        --shadow-xs: 0 1px 2px rgba(28, 25, 23, 0.04);
-        --shadow-sm: 0 2px 8px rgba(28, 25, 23, 0.06);
-        --shadow-md: 0 4px 16px rgba(28, 25, 23, 0.08);
-        --shadow-lg: 0 12px 32px rgba(28, 25, 23, 0.1);
-        --shadow-xl: 0 24px 48px rgba(28, 25, 23, 0.14);
-        --shadow-glow: 0 0 32px rgba(37, 99, 235, 0.12);
-        --shadow-primary: 0 8px 24px rgba(37, 99, 235, 0.25);
-        --shadow-float: 0 20px 40px rgba(28, 25, 23, 0.1), 0 8px 16px rgba(28, 25, 23, 0.06);
 
         /* Spacing */
         --space-1: 8px;
@@ -94,7 +99,7 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       html, body { height: 100%; overflow-x: hidden; }
 
       body {
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Outfit', sans-serif;
         margin: 0;
         background-color: var(--color-bg);
         color: var(--color-text);
@@ -103,24 +108,25 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         -moz-osx-font-smoothing: grayscale;
       }
 
-      /* Grain texture overlay */
+      /* Subtle dot-grid pattern */
       body::before {
         content: '';
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 32px 32px;
         pointer-events: none;
         z-index: 1;
-        opacity: 0.4;
       }
 
       h1, h2, h3, h4, h5, h6 {
-        font-family: 'Bricolage Grotesque', serif;
+        font-family: 'Syne', sans-serif;
         line-height: 1.15;
         letter-spacing: -0.02em;
       }
 
       a { color: inherit; text-decoration: none; transition: color 0.2s, opacity 0.2s; }
+      a:hover { color: var(--color-primary); }
 
       /* Animations */
       @keyframes fadeIn {
@@ -149,6 +155,11 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         100% { background-position: 200% 0; }
       }
 
+      @keyframes glow {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+
       .animate-enter { animation: fadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
       .stagger-1 { animation-delay: 0.1s; }
       .stagger-2 { animation-delay: 0.2s; }
@@ -168,25 +179,31 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         align-items: center;
         justify-content: space-between;
         padding: 10px 20px;
-        background: rgba(250, 250, 249, 0.8);
-        backdrop-filter: blur(16px) saturate(180%);
-        -webkit-backdrop-filter: blur(16px) saturate(180%);
-        border: 1px solid rgba(231, 229, 228, 0.6);
-        border-radius: var(--radius-full);
-        box-shadow: 0 4px 24px rgba(28, 25, 23, 0.06);
+        background: rgba(9, 9, 11, 0.7);
+        backdrop-filter: blur(20px) saturate(150%);
+        -webkit-backdrop-filter: blur(20px) saturate(150%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
         transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      header:hover {
+        border-color: rgba(6, 182, 212, 0.1);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(6, 182, 212, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
 
       .logo {
         display: flex;
         align-items: center;
         gap: 10px;
-        font-family: 'Bricolage Grotesque', serif;
+        font-family: 'Syne', sans-serif;
         font-weight: 700;
         font-size: 20px;
         color: var(--color-text);
         letter-spacing: -0.5px;
       }
+      .logo:hover { color: var(--color-text); }
 
       nav { display: flex; align-items: center; gap: 4px; }
       nav a {
@@ -194,12 +211,12 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         font-weight: 500;
         color: var(--color-text-muted);
         padding: 8px 16px;
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-sm);
         transition: all 0.2s ease;
       }
       nav a:hover {
         color: var(--color-text);
-        background: rgba(28, 25, 23, 0.04);
+        background: rgba(255, 255, 255, 0.04);
       }
       nav a[aria-current="page"] {
         color: var(--color-primary);
@@ -224,7 +241,7 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         gap: 8px;
         padding: 11px 24px;
         border-radius: var(--radius-full);
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Outfit', sans-serif;
         font-weight: 600;
         font-size: 14px;
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -237,25 +254,27 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       .btn-primary {
         background: var(--gradient-primary);
         color: white;
-        box-shadow: var(--shadow-primary);
-        border: 1px solid rgba(255,255,255,0.15);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: none;
       }
       .btn-primary:hover {
+        color: white;
         transform: translateY(-2px);
-        box-shadow: 0 12px 32px rgba(37, 99, 235, 0.35);
+        box-shadow: 0 0 24px rgba(6, 182, 212, 0.3), 0 8px 32px rgba(6, 182, 212, 0.2);
       }
       .btn-primary:active {
         transform: translateY(0);
       }
 
       .btn-outline {
-        background: var(--color-bg-card);
-        border: 1.5px solid var(--color-border);
+        background: transparent;
+        border: 1.5px solid rgba(255, 255, 255, 0.12);
         color: var(--color-text);
       }
       .btn-outline:hover {
-        border-color: var(--color-border-hover);
-        background: var(--color-bg-subtle);
+        color: var(--color-text);
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.04);
         transform: translateY(-1px);
         box-shadow: var(--shadow-sm);
       }
@@ -269,18 +288,20 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       .section { padding: 120px 0 80px; }
 
       .card {
-        background: var(--color-bg-card);
-        border: 1px solid var(--color-border);
+        background: rgba(24, 24, 27, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: var(--radius-lg);
         padding: var(--space-5);
         position: relative;
         overflow: hidden;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         box-shadow: var(--shadow-xs);
         transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       }
       .card:hover {
-        box-shadow: var(--shadow-md);
-        border-color: var(--color-border-hover);
+        box-shadow: var(--shadow-md), 0 0 32px rgba(6, 182, 212, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
       }
       .card::before { display: none; }
 
@@ -300,7 +321,8 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border: 1px solid rgba(37, 99, 235, 0.12);
+        border: 1px solid rgba(6, 182, 212, 0.15);
+        backdrop-filter: blur(8px);
       }
 
       .status-dot {
@@ -310,7 +332,7 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         border-radius: 50%;
         background: var(--color-success);
         margin-right: 8px;
-        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
       }
       .status-dot.inactive { background: var(--color-text-dim); box-shadow: none; }
 
@@ -329,18 +351,19 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         font-weight: 400;
       }
       .feature-list li::before {
-        content: "✓";
+        content: "\2713";
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 20px;
-        height: 20px;
-        min-width: 20px;
-        background: var(--color-primary-light);
-        color: var(--color-primary);
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        background: var(--color-primary);
+        color: white;
         border-radius: 50%;
         font-size: 11px;
         font-weight: bold;
+        box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
       }
 
       .muted { color: var(--color-text-muted); }
@@ -367,8 +390,8 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
 
       /* Form Elements */
       input, select, textarea {
-        background: var(--color-bg-subtle);
-        border: 1.5px solid var(--color-border);
+        background: #111113;
+        border: 1.5px solid rgba(255, 255, 255, 0.08);
         color: var(--color-text);
         padding: 11px 16px;
         border-radius: var(--radius-sm);
@@ -379,10 +402,14 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
+      input::placeholder, select::placeholder, textarea::placeholder {
+        color: var(--color-text-dim);
+      }
+
       input:focus, select:focus, textarea:focus {
         background: var(--color-bg-card);
         border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05);
       }
 
       /* Focus styles for accessibility */
@@ -411,10 +438,10 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
           left: 50%;
           transform: translateX(-50%) translateY(-8px);
           width: 92%;
-          background: rgba(250, 250, 249, 0.95);
+          background: rgba(9, 9, 11, 0.95);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border: 1px solid var(--color-border);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-lg);
           padding: 16px;
           flex-direction: column;
@@ -469,8 +496,8 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       <slot />
     </main>
 
-    <footer style="background: var(--color-bg-subtle); padding: 0 0 40px; border-top: none; position: relative;">
-      <div style="height: 2px; background: var(--gradient-primary); opacity: 0.3; margin-bottom: 80px;"></div>
+    <footer style="background: #06060A; padding: 0 0 40px; border-top: none; position: relative;">
+      <div style="height: 1px; background: var(--gradient-primary); opacity: 0.2; margin-bottom: 80px;"></div>
       <div class="container">
         <div class="grid grid-3" style="margin-bottom: 60px;">
           <!-- Brand -->
@@ -507,7 +534,7 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
           </div>
         </div>
 
-        <div style="border-top: 1px solid var(--color-border); padding-top: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <p class="muted" style="font-size: 14px;">&copy; {new Date().getFullYear()} AutoBridge. {t.footer.copyright}</p>
         </div>
       </div>

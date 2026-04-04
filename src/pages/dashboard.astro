@@ -6,6 +6,8 @@ import RenewalCountdown from "../components/RenewalCountdown.astro";
 import LoadingButton from "../components/LoadingButton.astro";
 import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../lib/stripe";
 import { getSupabaseServerClient } from "../lib/supabase";
+import { getConvexClient } from "../lib/convex";
+import { api } from "../../convex/_generated/api";
 
 const supabase = getSupabaseServerClient(Astro);
 const { data } = await supabase.auth.getUser();
@@ -25,32 +27,26 @@ const displayName = (data.user?.user_metadata as any)?.name ?? userEmail ?? "";
 const avatarInitial = (displayName || "U").slice(0, 1).toUpperCase();
 let invoicesCount = 0;
 
-// Cache billing_customers to avoid duplicate lookups
-let cachedBillingMap: { stripe_customer_id?: string } | null = null;
-let billingMapFetched = false;
+// Fetch session separately (still uses Supabase auth)
+const { data: sessionData } = await supabase.auth.getSession();
+const accessToken = sessionData.session?.access_token;
 
-// Fetch subscription_status, billing_customers, and session in parallel
-const [statusResult, billingResult, sessionResult] = await Promise.all([
+// Fetch subscription and billing data from Convex in parallel
+const convex = getConvexClient();
+const [status, billing] = await Promise.all([
   userId
-    ? supabase.from("subscription_status").select("active, price_id, current_period_end").eq("user_id", userId).maybeSingle()
-    : Promise.resolve({ data: null }),
+    ? convex.query(api.subscriptions.getByUserId, { userId })
+    : Promise.resolve(null),
   userId
-    ? supabase.from("billing_customers").select("stripe_customer_id").eq("user_id", userId).maybeSingle()
-    : Promise.resolve({ data: null }),
-  supabase.auth.getSession()
+    ? convex.query(api.billingCustomers.getByUserId, { userId })
+    : Promise.resolve(null),
 ]);
 
-const status = statusResult.data;
-cachedBillingMap = billingResult.data;
-billingMapFetched = true;
-const accessToken = sessionResult.data.session?.access_token;
-
 if (status) {
-  sub = { active: !!status.active, priceId: status.price_id ?? undefined, periodEnd: status.current_period_end ?? undefined };
+  sub = { active: !!status.active, priceId: status.priceId ?? undefined, periodEnd: status.currentPeriodEnd ?? undefined };
 } else if (userId) {
-  // Use cached billing_customers result
-  if (cachedBillingMap?.stripe_customer_id) {
-    sub = await findActiveSubscriptionByCustomerId(cachedBillingMap.stripe_customer_id);
+  if (billing?.stripeCustomerId) {
+    sub = await findActiveSubscriptionByCustomerId(billing.stripeCustomerId);
   } else if (userEmail) {
     sub = await findActiveSubscriptionByEmail(userEmail);
   }
@@ -64,8 +60,7 @@ if (accessToken && base) {
   }
 }
 if (invoices.length === 0 && userEmail) {
-  // Reuse cached billing_customers result
-  let customerId = cachedBillingMap?.stripe_customer_id as string | undefined;
+  let customerId = billing?.stripeCustomerId as string | undefined;
   if (!customerId) {
     const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     customerId = customers.data[0]?.id;
@@ -132,7 +127,7 @@ if (urlSuccess === "plan_change_scheduled") {
 }
 ---
 <Layout title="Dashboard">
-  <div class="glow-orb" style="top: -10%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%); filter: blur(60px); position: absolute; z-index: -1;"></div>
+  <div class="glow-orb" style="top: -10%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(6, 182, 212, 0.06) 0%, transparent 70%); filter: blur(60px); position: absolute; z-index: -1;"></div>
 
   <section class="container section" style="max-width: 1000px; padding-top: 30px;">
     
@@ -148,7 +143,7 @@ if (urlSuccess === "plan_change_scheduled") {
 
     {
       errorBanner ? (
-        <div class="card" style="border-color:#ef4444;background: color-mix(in oklab, #ef4444 8%, transparent); margin-bottom: 32px;">
+        <div class="card" style="border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); margin-bottom: 32px;">
           <strong style="color:#ef4444; display:flex; align-items:center; gap:8px">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             Action Required
@@ -167,8 +162,8 @@ if (urlSuccess === "plan_change_scheduled") {
 
     {
       successBanner ? (
-        <div class="card" style="border-color:#22c55e;background: color-mix(in oklab, #22c55e 8%, transparent); margin-bottom: 32px;">
-           <strong style="color:#16a34a; display:flex; align-items:center; gap:8px">
+        <div class="card" style="border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); margin-bottom: 32px;">
+           <strong style="color:#22c55e; display:flex; align-items:center; gap:8px">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Success
           </strong>
@@ -270,7 +265,7 @@ if (urlSuccess === "plan_change_scheduled") {
         <!-- Profile Card -->
         <div class="card">
           <div style="display:flex; align-items:center; gap:16px; margin-bottom: 20px;">
-            <div style="width:56px; height:56px; border-radius:50%; background: linear-gradient(135deg, #e0e7ff 0%, #fae8ff 100%); display:flex; align-items:center; justify-content:center; font-weight:700; font-size: 24px; color: var(--color-primary);">
+            <div style="width:56px; height:56px; border-radius:50%; background: var(--gradient-primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size: 24px; color: white;">
               {avatarInitial}
             </div>
             <div>
@@ -343,7 +338,7 @@ if (urlSuccess === "plan_change_scheduled") {
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .status-pill.active { background: #22c55e; color: white; box-shadow: 0 0 12px rgba(34, 197, 94, 0.4); }
+    .status-pill.active { background: #10B981; color: white; box-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
     .status-pill.inactive { background: rgba(255,255,255,0.2); color: white; }
 
     .invoice-list {

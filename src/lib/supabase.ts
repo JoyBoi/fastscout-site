@@ -1,3 +1,6 @@
+// NOTE: Supabase is used ONLY for authentication (OAuth, email/password, session management).
+// All application data/database operations use Convex. See src/lib/convex.ts.
+
 import type { AstroGlobal } from "astro";
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import type { CookieMethodsServer } from "@supabase/ssr";

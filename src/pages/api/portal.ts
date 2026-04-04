@@ -2,6 +2,8 @@ import type { APIRoute } from "astro";
 import { getSupabaseServerClient } from "../../lib/supabase";
 import stripe, { findActiveSubscriptionByEmail } from "../../lib/stripe";
 import { corsHeaders, preflight } from "../../lib/cors";
+import { getConvexClient } from "../../lib/convex";
+import { api } from "../../../convex/_generated/api";
 
 export const prerender = false;
 
@@ -13,15 +15,16 @@ export const POST: APIRoute = async (ctx) => {
   const accessToken = session?.access_token;
   if (!accessToken) return new Response("Unauthorized", { status: 401, headers: { ...corsHeaders(ctx.request) } });
 
-  const { data: allowed, error: rlError } = await supabase.rpc("check_rate_limit", {
-    action: "portal",
-    max_count: 5,
-    window_seconds: 60,
-  });
-  // Fail closed: deny on rate limit error (don't allow if RPC fails)
-  const proceed = rlError ? false : !!allowed;
+  const convex = getConvexClient();
   const siteUrl = import.meta.env.SITE_URL as string;
-  if (!proceed) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
+  let allowed: boolean;
+  try {
+    allowed = session.user?.id ? await convex.mutation(api.rateLimit.checkRateLimit, { userId: session.user.id, action: "portal", maxCount: 5, windowSeconds: 60 }) : false;
+  } catch {
+    allowed = false;
+  }
+  // Fail closed: deny on rate limit error (don't allow if mutation fails)
+  if (!allowed) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
 
   const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
 
@@ -42,12 +45,8 @@ export const POST: APIRoute = async (ctx) => {
   if (!email || !userId) return new Response("Unauthorized", { status: 401, headers: { ...corsHeaders(ctx.request) } });
 
   let customerId: string | undefined;
-  const { data: map } = await supabase
-    .from("billing_customers")
-    .select("stripe_customer_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  customerId = map?.stripe_customer_id;
+  const billingCustomer = await convex.query(api.billingCustomers.getByUserId, { userId });
+  customerId = billingCustomer?.stripeCustomerId;
   if (!customerId) {
     const customers = await stripe.customers.list({ email, limit: 1 });
     customerId = customers.data[0]?.id;

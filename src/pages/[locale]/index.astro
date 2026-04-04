@@ -15,9 +15,6 @@ const localePath = (path: string) => `/${locale}${path}`;
 ---
 
 <Layout title="AutoBridge - Surf Faster, Work Smarter" locale={locale}>
-  <!-- Background Glow Effects -->
-
-
   <!-- Hero Section: Split Layout -->
   <section class="hero-split">
     <div class="hero-content">
@@ -103,7 +100,7 @@ const localePath = (path: string) => `/${locale}${path}`;
 
     <div class="features-scroll">
       <div class="feature-card">
-        <div class="feature-icon" style="background: rgba(37, 99, 235, 0.1); color: var(--color-primary);">
+        <div class="feature-icon" style="background: rgba(6, 182, 212, 0.1); color: #06B6D4;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
         </div>
         <h3>{t.home.features.quickBid.title}</h3>
@@ -111,7 +108,7 @@ const localePath = (path: string) => `/${locale}${path}`;
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed;">
+        <div class="feature-icon" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
         <h3>{t.home.features.search.title}</h3>
@@ -119,7 +116,7 @@ const localePath = (path: string) => `/${locale}${path}`;
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon" style="background: rgba(34, 197, 94, 0.1); color: #16a34a;">
+        <div class="feature-icon" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
         </div>
         <h3>{t.home.features.capture.title}</h3>
@@ -127,7 +124,7 @@ const localePath = (path: string) => `/${locale}${path}`;
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon" style="background: rgba(251, 146, 60, 0.1); color: #f97316;">
+        <div class="feature-icon" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         </div>
         <h3>Secure & Private</h3>
@@ -140,7 +137,7 @@ const localePath = (path: string) => `/${locale}${path}`;
   <section class="testimonial-section animate-enter">
     <div class="testimonial-wrapper">
       <div class="quote-icon">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.2;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.3;">
           <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H15.017C14.4647 8 14.017 8.44772 14.017 9V11C14.017 11.5523 13.5693 12 13.017 12H12.017V5H22.017V15C22.017 18.3137 19.3307 21 16.017 21H14.017ZM5.0166 21L5.0166 18C5.0166 16.8954 5.91203 16 7.0166 16H10.0166C10.5689 16 11.0166 15.5523 11.0166 15V9C11.0166 8.44772 10.5689 8 10.0166 8H6.0166C5.46432 8 5.0166 8.44772 5.0166 9V11C5.0166 11.5523 4.56889 12 4.0166 12H3.0166V5H13.0166V15C13.0166 18.3137 10.3303 21 7.0166 21H5.0166Z" />
         </svg>
       </div>
@@ -163,22 +160,130 @@ const localePath = (path: string) => `/${locale}${path}`;
   <section class="cta-section">
     <div class="cta-card">
       <h2>Ready to scout faster?</h2>
-      <p class="muted">Join hundreds of automotive professionals already using AutoBridge.</p>
+      <p class="cta-muted">Join hundreds of automotive professionals already using AutoBridge.</p>
       <div class="cta-actions">
-        <a href={localePath('/pricing')} class="btn btn-primary">Get Started Free</a>
-        <a href={localePath('/extension')} class="btn btn-outline">View Extension</a>
+        <a href={localePath('/pricing')} class="btn btn-cta-primary">Get Started Free</a>
+        <a href={localePath('/extension')} class="btn btn-cta-outline">View Extension</a>
       </div>
     </div>
   </section>
 
   <style>
-    /* Hero Split Layout */
+    /* ===== Dark Theme Overrides (scoped to homepage) ===== */
+
+    /* Override Layout background for this page */
+    :global(body) {
+      background-color: #09090B !important;
+    }
+
+    :global(body::before) {
+      opacity: 0.15 !important;
+    }
+
+    /* Override header for dark theme */
+    :global(header) {
+      background: rgba(9, 9, 11, 0.8) !important;
+      border-color: rgba(255, 255, 255, 0.06) !important;
+      backdrop-filter: blur(20px) saturate(150%) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    :global(header .logo) {
+      color: #FAFAFA !important;
+    }
+
+    :global(nav a) {
+      color: #A1A1AA !important;
+    }
+
+    :global(nav a:hover) {
+      color: #FAFAFA !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    :global(nav a[aria-current="page"]) {
+      color: #06B6D4 !important;
+      background: rgba(6, 182, 212, 0.1) !important;
+    }
+
+    /* Override mobile nav for dark */
+    @media (max-width: 900px) {
+      :global(nav) {
+        background: rgba(9, 9, 11, 0.95) !important;
+        border-color: rgba(255, 255, 255, 0.06) !important;
+      }
+    }
+
+    /* Override footer for dark theme */
+    :global(footer) {
+      background: rgba(9, 9, 11, 0.95) !important;
+    }
+
+    :global(footer .logo) {
+      color: #FAFAFA !important;
+    }
+
+    :global(footer h4) {
+      color: #FAFAFA !important;
+    }
+
+    :global(footer .footer-link) {
+      color: #A1A1AA !important;
+    }
+
+    :global(footer .footer-link:hover) {
+      color: #06B6D4 !important;
+    }
+
+    :global(footer .muted) {
+      color: #71717A !important;
+    }
+
+    :global(footer div[style*="border-top"]) {
+      border-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    :global(footer div[style*="gradient-primary"]) {
+      background: linear-gradient(135deg, #06B6D4, #10B981) !important;
+      opacity: 0.4 !important;
+    }
+
+    /* Override container section padding */
+    :global(main.container.section) {
+      padding-top: 100px;
+    }
+
+    /* Override global btn styles for dark theme */
+    :global(.btn-primary) {
+      background: linear-gradient(135deg, #06B6D4, #10B981) !important;
+      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.25) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    :global(.btn-primary:hover) {
+      box-shadow: 0 12px 32px rgba(6, 182, 212, 0.4) !important;
+    }
+
+    :global(.btn-outline) {
+      background: transparent !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+      color: #FAFAFA !important;
+    }
+
+    :global(.btn-outline:hover) {
+      border-color: rgba(255, 255, 255, 0.3) !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    /* ===== Hero Split Layout ===== */
     .hero-split {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 60px;
       align-items: center;
-      padding: 40px 0 80px;
+      padding: 40px 0 100px;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -187,21 +292,22 @@ const localePath = (path: string) => `/${locale}${path}`;
       padding-right: 20px;
     }
 
-    /* Version Pill with shimmer */
+    /* ===== Version Pill ===== */
     .version-pill {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       padding: 6px 16px;
-      background: var(--color-bg-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-full);
+      background: rgba(24, 24, 27, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 100px;
       margin-bottom: 28px;
       font-size: 13px;
       font-weight: 600;
-      color: var(--color-text-muted);
+      color: #A1A1AA;
       letter-spacing: 0.3px;
-      box-shadow: var(--shadow-xs);
       position: relative;
       overflow: hidden;
     }
@@ -213,7 +319,7 @@ const localePath = (path: string) => `/${locale}${path}`;
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.06), transparent);
+      background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.08), transparent);
       animation: shimmer 3s ease-in-out infinite;
     }
 
@@ -225,45 +331,46 @@ const localePath = (path: string) => `/${locale}${path}`;
     .pulse-dot {
       width: 8px;
       height: 8px;
-      background: #22c55e;
+      background: #06B6D4;
       border-radius: 50%;
-      box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+      box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
       animation: pulse 2s ease-in-out infinite;
     }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.7; transform: scale(1.1); }
+      50% { opacity: 0.7; transform: scale(1.2); }
     }
 
-    /* Hero Title */
+    /* ===== Hero Title ===== */
     .hero-title {
-      font-family: 'Bricolage Grotesque', serif;
+      font-family: 'Syne', 'Bricolage Grotesque', sans-serif;
       font-size: clamp(42px, 5.5vw, 72px);
       font-weight: 800;
       line-height: 1.05;
       margin-bottom: 24px;
       letter-spacing: -0.03em;
-      color: var(--color-text);
+      color: #FAFAFA;
     }
 
     .text-gradient {
-      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, #06B6D4 0%, #10B981 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    /* Hero Subtitle */
+    /* ===== Hero Subtitle ===== */
     .hero-subtitle {
+      font-family: 'Outfit', 'DM Sans', sans-serif;
       font-size: 18px;
-      color: var(--color-text-muted);
+      color: #A1A1AA;
       line-height: 1.7;
       margin-bottom: 36px;
       max-width: 460px;
     }
 
-    /* Hero Actions */
+    /* ===== Hero Actions ===== */
     .hero-actions {
       display: flex;
       gap: 12px;
@@ -276,13 +383,13 @@ const localePath = (path: string) => `/${locale}${path}`;
       font-size: 15px;
     }
 
-    /* Quick Stats */
+    /* ===== Quick Stats ===== */
     .quick-stats {
       display: flex;
       align-items: center;
       gap: 28px;
       padding: 24px 0;
-      border-top: 1.5px solid var(--color-border);
+      border-top: 1.5px solid rgba(255, 255, 255, 0.06);
     }
 
     .stat {
@@ -291,10 +398,10 @@ const localePath = (path: string) => `/${locale}${path}`;
     }
 
     .stat-value {
-      font-family: 'Bricolage Grotesque', serif;
+      font-family: 'Syne', 'Bricolage Grotesque', sans-serif;
       font-size: 32px;
       font-weight: 800;
-      background: var(--gradient-primary);
+      background: linear-gradient(135deg, #06B6D4, #10B981);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -303,7 +410,7 @@ const localePath = (path: string) => `/${locale}${path}`;
 
     .stat-label {
       font-size: 13px;
-      color: var(--color-text-muted);
+      color: #52525B;
       font-weight: 500;
       margin-top: 2px;
     }
@@ -311,10 +418,10 @@ const localePath = (path: string) => `/${locale}${path}`;
     .stat-divider {
       width: 1px;
       height: 40px;
-      background: var(--color-border);
+      background: rgba(255, 255, 255, 0.06);
     }
 
-    /* Browser Mockup */
+    /* ===== Browser Mockup ===== */
     .hero-visual {
       position: relative;
     }
@@ -327,23 +434,29 @@ const localePath = (path: string) => `/${locale}${path}`;
       transform: translate(-50%, -50%);
       width: 120%;
       height: 120%;
-      background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.08) 0%, rgba(124, 58, 237, 0.04) 40%, transparent 70%);
+      background: radial-gradient(ellipse at center, rgba(6, 182, 212, 0.12) 0%, rgba(16, 185, 129, 0.06) 40%, transparent 70%);
       pointer-events: none;
       z-index: -1;
     }
 
     .browser-mockup {
-      background: var(--color-bg-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
+      background: rgba(24, 24, 27, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: var(--shadow-xl);
+      box-shadow:
+        0 0 60px rgba(6, 182, 212, 0.1),
+        0 24px 48px rgba(0, 0, 0, 0.4);
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .browser-mockup:hover {
       transform: translateY(-6px) rotate(-0.5deg);
-      box-shadow: 0 32px 64px rgba(28, 25, 23, 0.15);
+      box-shadow:
+        0 0 80px rgba(6, 182, 212, 0.15),
+        0 32px 64px rgba(0, 0, 0, 0.5);
     }
 
     .browser-header {
@@ -351,8 +464,8 @@ const localePath = (path: string) => `/${locale}${path}`;
       align-items: center;
       gap: 12px;
       padding: 12px 16px;
-      background: var(--color-bg-subtle);
-      border-bottom: 1px solid var(--color-border);
+      background: rgba(9, 9, 11, 0.8);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .browser-dots {
@@ -366,19 +479,19 @@ const localePath = (path: string) => `/${locale}${path}`;
       border-radius: 50%;
     }
 
-    .browser-dots span:nth-child(1) { background: #FCA5A5; }
-    .browser-dots span:nth-child(2) { background: #FDE68A; }
-    .browser-dots span:nth-child(3) { background: #86EFAC; }
+    .browser-dots span:nth-child(1) { background: #EF4444; }
+    .browser-dots span:nth-child(2) { background: #F59E0B; }
+    .browser-dots span:nth-child(3) { background: #10B981; }
 
     .browser-url {
       flex: 1;
       padding: 7px 14px;
-      background: var(--color-bg-card);
+      background: rgba(24, 24, 27, 0.8);
       border-radius: 8px;
       font-size: 12px;
-      color: var(--color-text-dim);
+      color: #52525B;
       text-align: center;
-      border: 1px solid var(--color-border);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .browser-content {
@@ -388,7 +501,7 @@ const localePath = (path: string) => `/${locale}${path}`;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--color-bg-subtle);
+      background: rgba(9, 9, 11, 0.6);
     }
 
     .browser-content img {
@@ -397,25 +510,37 @@ const localePath = (path: string) => `/${locale}${path}`;
       display: block;
     }
 
-    /* Social Proof */
+    /* ===== Social Proof ===== */
     .social-proof {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 32px;
       padding: 20px 40px;
-      background: var(--color-bg-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-full);
+      background: rgba(24, 24, 27, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 100px;
       max-width: fit-content;
       margin: 0 auto 100px;
-      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .social-proof::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 20%;
+      right: 20%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.4), transparent);
     }
 
     .proof-label {
       font-size: 11px;
       font-weight: 700;
-      color: var(--color-text-dim);
+      color: #52525B;
       text-transform: uppercase;
       letter-spacing: 1.5px;
     }
@@ -427,31 +552,31 @@ const localePath = (path: string) => `/${locale}${path}`;
     }
 
     .proof-logos a {
-      font-family: 'Bricolage Grotesque', serif;
+      font-family: 'Syne', 'Bricolage Grotesque', sans-serif;
       font-weight: 700;
       font-size: 16px;
-      color: var(--color-text);
+      color: #FAFAFA;
       opacity: 0.4;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .proof-logos a:hover {
       opacity: 1;
-      color: var(--color-primary);
+      color: #06B6D4;
       transform: translateY(-2px);
     }
 
     .proof-divider {
       width: 1px;
       height: 20px;
-      background: var(--color-border);
+      background: rgba(255, 255, 255, 0.06);
     }
 
-    /* Features Section */
+    /* ===== Features Section ===== */
     .features-section {
       max-width: 1200px;
       margin: 0 auto 100px;
-      padding: 0 var(--space-4);
+      padding: 0 24px;
     }
 
     .section-header {
@@ -460,12 +585,16 @@ const localePath = (path: string) => `/${locale}${path}`;
     }
 
     .section-header h2 {
-      font-family: 'Bricolage Grotesque', serif;
+      font-family: 'Syne', 'Bricolage Grotesque', sans-serif;
       font-size: clamp(32px, 4.5vw, 52px);
       font-weight: 800;
       letter-spacing: -0.03em;
       margin-bottom: 16px;
-      color: var(--color-text);
+      color: #FAFAFA;
+    }
+
+    .section-header .muted {
+      color: #A1A1AA;
     }
 
     .features-scroll {
@@ -475,12 +604,13 @@ const localePath = (path: string) => `/${locale}${path}`;
     }
 
     .feature-card {
-      background: var(--color-bg-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
+      background: rgba(24, 24, 27, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
       padding: 32px 28px;
       transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: var(--shadow-xs);
       position: relative;
       overflow: hidden;
     }
@@ -492,15 +622,17 @@ const localePath = (path: string) => `/${locale}${path}`;
       left: 0;
       right: 0;
       height: 3px;
-      background: var(--gradient-primary);
+      background: linear-gradient(135deg, #06B6D4, #10B981);
       opacity: 0;
       transition: opacity 0.3s ease;
     }
 
     .feature-card:hover {
       transform: translateY(-6px);
-      box-shadow: var(--shadow-lg);
-      border-color: var(--color-border-hover);
+      border-color: rgba(6, 182, 212, 0.2);
+      box-shadow:
+        0 0 30px rgba(6, 182, 212, 0.08),
+        0 12px 32px rgba(0, 0, 0, 0.3);
     }
 
     .feature-card:hover::after {
@@ -518,35 +650,36 @@ const localePath = (path: string) => `/${locale}${path}`;
     }
 
     .feature-card h3 {
-      font-family: 'Bricolage Grotesque', serif;
+      font-family: 'Syne', 'Bricolage Grotesque', sans-serif;
       font-size: 18px;
       font-weight: 700;
       margin-bottom: 10px;
-      color: var(--color-text);
+      color: #FAFAFA;
     }
 
     .feature-card p {
       font-size: 14px;
-      color: var(--color-text-muted);
+      color: #A1A1AA;
       line-height: 1.7;
       margin: 0;
     }
 
-    /* Testimonial Section */
+    /* ===== Testimonial Section ===== */
     .testimonial-section {
       max-width: 1000px;
       margin: 0 auto 100px;
-      padding: 0 var(--space-4);
+      padding: 0 24px;
       position: relative;
     }
 
     .testimonial-wrapper {
       text-align: center;
-      background: var(--color-bg-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
+      background: rgba(24, 24, 27, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
       padding: 64px 48px;
-      box-shadow: var(--shadow-md);
       position: relative;
       overflow: hidden;
     }
@@ -555,20 +688,20 @@ const localePath = (path: string) => `/${locale}${path}`;
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0; height: 4px;
-      background: var(--gradient-primary);
+      background: linear-gradient(135deg, #06B6D4, #10B981);
     }
 
     .quote-icon {
-      color: var(--color-primary);
+      color: #06B6D4;
       margin-bottom: 24px;
     }
 
     .testimonial-quote {
-      font-family: 'Bricolage Grotesque', serif;
+      font-family: 'Syne', 'Bricolage Grotesque', sans-serif;
       font-size: 26px;
       font-weight: 500;
       line-height: 1.5;
-      color: var(--color-text);
+      color: #FAFAFA;
       margin: 0 auto 40px;
       max-width: 700px;
       font-style: italic;
@@ -586,9 +719,9 @@ const localePath = (path: string) => `/${locale}${path}`;
       height: 56px;
       border-radius: 50%;
       overflow: hidden;
-      border: 2px solid var(--color-border);
-      box-shadow: var(--shadow-sm);
-      background: var(--color-bg-subtle);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+      background: rgba(24, 24, 27, 0.8);
     }
 
     .author-avatar img {
@@ -607,32 +740,32 @@ const localePath = (path: string) => `/${locale}${path}`;
       display: block;
       font-weight: 700;
       font-style: normal;
-      color: var(--color-text);
+      color: #FAFAFA;
       font-size: 16px;
     }
 
     .author-role {
       display: block;
       font-size: 13px;
-      color: var(--color-text-muted);
+      color: #A1A1AA;
     }
 
-    /* CTA Section */
+    /* ===== CTA Section ===== */
     .cta-section {
       max-width: 900px;
       margin: 0 auto 100px;
-      padding: 0 var(--space-4);
+      padding: 0 24px;
     }
 
     .cta-card {
-      background: var(--gradient-primary);
-      border-radius: 32px;
+      background: linear-gradient(135deg, #06B6D4, #10B981);
+      border-radius: 24px;
       padding: 80px 48px;
       text-align: center;
       color: white;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 24px 48px -12px rgba(37, 99, 235, 0.4);
+      box-shadow: 0 24px 48px -12px rgba(6, 182, 212, 0.3);
     }
 
     .cta-card::before {
@@ -640,58 +773,92 @@ const localePath = (path: string) => `/${locale}${path}`;
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
       background-image:
-        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.15), transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1), transparent 40%);
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1), transparent 40%),
+        radial-gradient(circle at 60% 40%, rgba(0,0,0,0.05), transparent 30%);
       pointer-events: none;
     }
 
     .cta-card h2 {
-      font-family: 'Bricolage Grotesque', serif;
+      font-family: 'Syne', 'Bricolage Grotesque', sans-serif;
       font-size: clamp(32px, 5vw, 52px);
       font-weight: 800;
       margin-bottom: 16px;
       letter-spacing: -0.02em;
+      position: relative;
     }
 
-    .cta-card .muted {
+    .cta-muted {
       color: rgba(255, 255, 255, 0.9);
       font-size: 18px;
       margin-bottom: 40px;
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
+      position: relative;
     }
 
     .cta-actions {
       display: flex;
       gap: 16px;
       justify-content: center;
+      position: relative;
     }
 
-    .cta-actions .btn-primary {
-      background: white;
-      color: var(--color-primary);
-      border: none;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    .btn-cta-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 24px;
+      border-radius: 100px;
+      font-family: 'Outfit', 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      background: white !important;
+      color: #0E7490 !important;
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .cta-actions .btn-primary:hover {
-      background: #F8FAFC;
+    .btn-cta-primary:hover {
+      background: #F0FDFA !important;
       transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     }
 
-    .cta-actions .btn-outline {
-      border-color: rgba(255, 255, 255, 0.4);
-      color: white;
-      background: transparent;
+    .btn-cta-outline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 24px;
+      border-radius: 100px;
+      font-family: 'Outfit', 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      background: rgba(255, 255, 255, 0.15) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+      color: white !important;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .cta-actions .btn-outline:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: white;
+    .btn-cta-outline:hover {
+      background: rgba(255, 255, 255, 0.25) !important;
+      border-color: white !important;
+      transform: translateY(-1px);
     }
 
-    /* Responsive */
+    /* ===== Responsive ===== */
     @media (max-width: 900px) {
       .hero-split {
         grid-template-columns: 1fr;
@@ -723,7 +890,7 @@ const localePath = (path: string) => `/${locale}${path}`;
       .social-proof {
         flex-direction: column;
         gap: 16px;
-        border-radius: var(--radius-lg);
+        border-radius: 20px;
       }
     }
 
@@ -759,11 +926,11 @@ const localePath = (path: string) => `/${locale}${path}`;
     function checkAuthState() {
       // Check for Supabase auth token in cookies or localStorage
       const hasAuthCookie = document.cookie.includes('sb-');
-      const hasLocalStorage = typeof localStorage !== 'undefined' && 
+      const hasLocalStorage = typeof localStorage !== 'undefined' &&
         Object.keys(localStorage).some(k => k.startsWith('sb-'));
-      
+
       const isSignedIn = hasAuthCookie || hasLocalStorage;
-      
+
       // Toggle CTAs based on auth state
       document.querySelectorAll('[data-cta="guest"]').forEach(el => {
         (el as HTMLElement).style.display = isSignedIn ? 'none' : '';
@@ -772,7 +939,7 @@ const localePath = (path: string) => `/${locale}${path}`;
         (el as HTMLElement).style.display = isSignedIn ? '' : 'none';
       });
     }
-    
+
     // Run on load and after Astro page transitions
     document.addEventListener('DOMContentLoaded', checkAuthState);
     document.addEventListener('astro:page-load', checkAuthState);

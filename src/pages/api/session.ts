@@ -2,6 +2,8 @@ import type { APIRoute } from "astro";
 import { getSupabaseServerClient } from "../../lib/supabase";
 import { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
 import { corsHeaders, preflight } from "../../lib/cors";
+import { getConvexClient } from "../../lib/convex";
+import { api } from "../../../convex/_generated/api";
 
 export const prerender = false;
 
@@ -24,32 +26,23 @@ export const POST: APIRoute = async (ctx) => {
   let priceId: string | undefined;
   let periodEnd: string | undefined;
 
-  // Fetch both tables in parallel - billing_customers is cheap and we may need it
-  const [statusResult, billingResult] = await Promise.all([
-    supabase
-      .from("subscription_status")
-      .select("active, price_id, current_period_end")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    supabase
-      .from("billing_customers")
-      .select("stripe_customer_id")
-      .eq("user_id", userId)
-      .maybeSingle()
-  ]);
+  const convex = getConvexClient();
 
-  const status = statusResult.data;
-  const billingMap = billingResult.data;
+  // Fetch both from Convex in parallel - billing_customers is cheap and we may need it
+  const [status, billingCustomer] = await Promise.all([
+    convex.query(api.subscriptions.getByUserId, { userId }),
+    convex.query(api.billingCustomers.getByUserId, { userId })
+  ]);
 
   if (status) {
     subscriptionActive = !!status.active;
-    priceId = status.price_id ?? undefined;
-    periodEnd = status.current_period_end ?? undefined;
+    priceId = status.priceId ?? undefined;
+    periodEnd = status.currentPeriodEnd ?? undefined;
   }
 
   // Only call Stripe if DB says not active
   if (!subscriptionActive && email) {
-    const customerId = billingMap?.stripe_customer_id as string | undefined;
+    const customerId = billingCustomer?.stripeCustomerId as string | undefined;
     if (customerId) {
       const res = await findActiveSubscriptionByCustomerId(customerId);
       subscriptionActive = res.active;

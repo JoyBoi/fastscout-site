@@ -2,6 +2,8 @@ import type { APIRoute } from "astro";
 import { getSupabaseServerClient } from "../../lib/supabase";
 import stripe, { findActiveSubscriptionByEmail } from "../../lib/stripe";
 import { preflight, corsHeaders } from "../../lib/cors";
+import { getConvexClient } from "../../lib/convex";
+import { api } from "../../../convex/_generated/api";
 
 export const prerender = false;
 
@@ -17,20 +19,27 @@ export const POST: APIRoute = async (ctx) => {
   const plan = (form.get("plan") as string | null) ?? null;
   const monthly = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
   const yearly = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
+  const quarterly = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
+  const halfyearly = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
   const fallback = import.meta.env.STRIPE_PRICE_ID as string | undefined;
   let priceId: string | undefined;
   if (plan === "monthly") priceId = monthly ?? fallback;
   else if (plan === "annual") priceId = yearly ?? fallback;
+  else if (plan === "quarterly") priceId = quarterly ?? fallback;
+  else if (plan === "halfyearly") priceId = halfyearly ?? fallback;
   else priceId = fallback;
 
-  const { data: allowed, error: rlError } = await supabase.rpc("check_rate_limit", {
-    action: "checkout",
-    max_count: 3,
-    window_seconds: 60,
-  });
+  const convex = getConvexClient();
+  const userId = session.user?.id;
+  let allowed: boolean;
+  try {
+    allowed = userId ? await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "checkout", maxCount: 3, windowSeconds: 60 }) : false;
+  } catch {
+    allowed = false;
+  }
   const siteUrl = import.meta.env.SITE_URL as string;
-  // Fail closed: deny on rate limit error (don't allow if RPC fails)
-  if (rlError || !allowed) {
+  // Fail closed: deny on rate limit error (don't allow if mutation fails)
+  if (!allowed) {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
   const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;

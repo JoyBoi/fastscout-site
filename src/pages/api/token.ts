@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
 import { getSupabaseServerClient } from "../../lib/supabase";
 import { corsHeaders, preflight } from "../../lib/cors";
+import { getConvexClient } from "../../lib/convex";
+import { api } from "../../../convex/_generated/api";
 
 export const prerender = false;
 
@@ -15,29 +17,22 @@ export const POST: APIRoute = async (ctx) => {
   const userId = data.user?.id;
   if (!email || !userId) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 
-  const { data: allowed, error: rlError } = await supabase.rpc("check_rate_limit", {
-    action: "token",
-    max_count: 10,
-    window_seconds: 300,
-  });
-  // Fail closed: deny on rate limit error (don't allow if RPC fails)
-  const proceed = rlError ? false : !!allowed;
-  if (!proceed) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+  const convex = getConvexClient();
+  let allowed: boolean;
+  try {
+    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "token", maxCount: 10, windowSeconds: 300 });
+  } catch {
+    allowed = false;
+  }
+  // Fail closed: deny on rate limit error (don't allow if mutation fails)
+  if (!allowed) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 
   let customerId: string | undefined;
-  const { data: status } = await supabase
-    .from("subscription_status")
-    .select("active")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const status = await convex.query(api.subscriptions.getByUserId, { userId });
   let active = !!status?.active;
   if (!active) {
-    const { data: map } = await supabase
-      .from("billing_customers")
-      .select("stripe_customer_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    customerId = map?.stripe_customer_id;
+    const billingCustomer = await convex.query(api.billingCustomers.getByUserId, { userId });
+    customerId = billingCustomer?.stripeCustomerId;
     if (customerId) active = (await findActiveSubscriptionByCustomerId(customerId)).active;
     else active = (await findActiveSubscriptionByEmail(email)).active;
   }
