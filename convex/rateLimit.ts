@@ -14,6 +14,7 @@ const RATE_LIMITS: Record<string, { maxCount: number; windowMs: number }> = {
   portal:         { maxCount: 5,  windowMs: 60_000 },
   log_missing:    { maxCount: 20, windowMs: 60_000 },
   extension_verify: { maxCount: 30, windowMs: 60_000 },
+  activity_event:   { maxCount: 60, windowMs: 60_000 },
 };
 
 const DEFAULT_LIMIT = { maxCount: 10, windowMs: 60_000 };

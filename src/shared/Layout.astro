@@ -32,10 +32,23 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
     <link rel="icon" href="/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
     <ViewTransitions />
+    <!-- Prevent flash of wrong theme — runs on initial load AND after Astro view transitions -->
+    <script is:inline>
+      (function(){
+        function applyTheme(){
+          var t = localStorage.getItem('ab-theme');
+          if (!t) t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+        }
+        applyTheme();
+        document.addEventListener('astro:after-swap', applyTheme);
+      })();
+    </script>
     <style is:inline>
-      :root {
+      /* ===== DARK THEME (default) ===== */
+      :root, [data-theme="dark"] {
         color-scheme: dark;
 
         /* Backgrounds */
@@ -44,13 +57,14 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         --color-bg-card: #18181B;
         --color-bg-elevated: #1F1F23;
 
-        /* Text */
+        /* Text — contrast-checked (WCAG AA on dark bg) */
         --color-text: #FAFAFA;
-        --color-text-muted: #A1A1AA;
-        --color-text-dim: #52525B;
+        --color-text-muted: #B4B4BC;
+        --color-text-dim: #71717A;
 
         /* Accent — Cyan/Teal */
         --color-primary: #06B6D4;
+        --color-primary-hover: #22D3EE;
         --color-primary-light: rgba(6, 182, 212, 0.1);
         --color-primary-glow: rgba(6, 182, 212, 0.25);
 
@@ -63,11 +77,38 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         --color-accent: #F59E0B;
         --color-accent-light: rgba(245, 158, 11, 0.1);
         --color-success: #10B981;
+        --color-success-light: rgba(16, 185, 129, 0.1);
+        --color-success-border: rgba(16, 185, 129, 0.2);
         --color-danger: #EF4444;
+        --color-danger-light: rgba(239, 68, 68, 0.08);
+        --color-danger-border: rgba(239, 68, 68, 0.2);
+        --color-warning: #F59E0B;
+        --color-warning-light: rgba(245, 158, 11, 0.08);
         --color-border: rgba(255, 255, 255, 0.06);
         --color-border-hover: rgba(255, 255, 255, 0.12);
 
-        /* Shadows — Dark mode */
+        /* Theme-aware component colors */
+        --header-bg: rgba(9, 9, 11, 0.7);
+        --header-border: rgba(255, 255, 255, 0.06);
+        --header-inset: rgba(255, 255, 255, 0.03);
+        --nav-hover-bg: rgba(255, 255, 255, 0.04);
+        --mobile-nav-bg: rgba(9, 9, 11, 0.95);
+        --card-bg: rgba(24, 24, 27, 0.85);
+        --card-border: rgba(255, 255, 255, 0.06);
+        --card-border-hover: rgba(255, 255, 255, 0.1);
+        --input-bg: #111113;
+        --input-border: rgba(255, 255, 255, 0.08);
+        --footer-bg: #06060A;
+        --footer-border: rgba(255, 255, 255, 0.06);
+        --outline-border: rgba(255, 255, 255, 0.12);
+        --outline-hover-border: rgba(255, 255, 255, 0.2);
+        --outline-hover-bg: rgba(255, 255, 255, 0.04);
+        --pill-bg: rgba(255, 255, 255, 0.04);
+        --pill-border: rgba(255, 255, 255, 0.08);
+        --pill-hover-bg: rgba(255, 255, 255, 0.08);
+        --dot-pattern: url("data:image/svg+xml,%3Csvg width='32' height='32' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='16' cy='16' r='0.8' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E");
+
+        /* Shadows — Dark */
         --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
         --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
         --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -94,6 +135,78 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         --space-8: 96px;
       }
 
+      /* ===== LIGHT THEME ===== */
+      [data-theme="light"] {
+        color-scheme: light;
+
+        /* Backgrounds */
+        --color-bg: #F8F9FA;
+        --color-bg-subtle: #F0F1F3;
+        --color-bg-card: #FFFFFF;
+        --color-bg-elevated: #FFFFFF;
+
+        /* Text — dark on light, high contrast */
+        --color-text: #111827;
+        --color-text-muted: #4B5563;
+        --color-text-dim: #6B7280;
+
+        /* Accent — deeper cyan for light bg readability */
+        --color-primary: #0891B2;
+        --color-primary-hover: #0E7490;
+        --color-primary-light: rgba(8, 145, 178, 0.08);
+        --color-primary-glow: rgba(8, 145, 178, 0.15);
+
+        /* Gradients */
+        --gradient-primary: linear-gradient(135deg, #0891B2 0%, #059669 100%);
+        --gradient-subtle: linear-gradient(135deg, rgba(8, 145, 178, 0.06) 0%, rgba(5, 150, 105, 0.04) 100%);
+        --gradient-glow: radial-gradient(circle at center, rgba(8, 145, 178, 0.04) 0%, transparent 70%);
+
+        /* Semantic */
+        --color-accent: #D97706;
+        --color-accent-light: rgba(217, 119, 6, 0.08);
+        --color-success: #059669;
+        --color-success-light: rgba(5, 150, 105, 0.08);
+        --color-success-border: rgba(5, 150, 105, 0.2);
+        --color-danger: #DC2626;
+        --color-danger-light: rgba(220, 38, 38, 0.06);
+        --color-danger-border: rgba(220, 38, 38, 0.2);
+        --color-warning: #D97706;
+        --color-warning-light: rgba(217, 119, 6, 0.06);
+        --color-border: rgba(0, 0, 0, 0.08);
+        --color-border-hover: rgba(0, 0, 0, 0.15);
+
+        /* Theme-aware component colors */
+        --header-bg: rgba(255, 255, 255, 0.8);
+        --header-border: rgba(0, 0, 0, 0.06);
+        --header-inset: rgba(255, 255, 255, 0.6);
+        --nav-hover-bg: rgba(0, 0, 0, 0.04);
+        --mobile-nav-bg: rgba(255, 255, 255, 0.97);
+        --card-bg: #FFFFFF;
+        --card-border: rgba(0, 0, 0, 0.06);
+        --card-border-hover: rgba(0, 0, 0, 0.12);
+        --input-bg: #F0F1F3;
+        --input-border: rgba(0, 0, 0, 0.1);
+        --footer-bg: #F0F1F3;
+        --footer-border: rgba(0, 0, 0, 0.06);
+        --outline-border: rgba(0, 0, 0, 0.12);
+        --outline-hover-border: rgba(0, 0, 0, 0.25);
+        --outline-hover-bg: rgba(0, 0, 0, 0.03);
+        --pill-bg: rgba(0, 0, 0, 0.04);
+        --pill-border: rgba(0, 0, 0, 0.08);
+        --pill-hover-bg: rgba(0, 0, 0, 0.07);
+        --dot-pattern: url("data:image/svg+xml,%3Csvg width='32' height='32' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='16' cy='16' r='0.8' fill='rgba(0,0,0,0.03)'/%3E%3C/svg%3E");
+
+        /* Shadows — Light */
+        --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+        --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.12);
+        --shadow-glow: 0 0 40px rgba(8, 145, 178, 0.08);
+        --shadow-primary: 0 8px 32px rgba(8, 145, 178, 0.12);
+        --shadow-float: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+
       /* Global Reset & Base */
       * { box-sizing: border-box; }
       html, body { height: 100%; overflow-x: hidden; }
@@ -109,19 +222,13 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         -moz-osx-font-smoothing: grayscale;
       }
 
-      /* Subtle dot-grid pattern */
-      body::before {
-        content: '';
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-        background-size: 32px 32px;
-        pointer-events: none;
-        z-index: 1;
+      body {
+        background-image: var(--dot-pattern);
+        background-repeat: repeat;
       }
 
       h1, h2, h3, h4, h5, h6 {
-        font-family: 'Syne', sans-serif;
+        font-family: 'Plus Jakarta Sans', sans-serif;
         line-height: 1.15;
         letter-spacing: -0.02em;
       }
@@ -180,25 +287,26 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         align-items: center;
         justify-content: space-between;
         padding: 10px 20px;
-        background: rgba(9, 9, 11, 0.7);
+        background: var(--header-bg);
         backdrop-filter: blur(20px) saturate(150%);
         -webkit-backdrop-filter: blur(20px) saturate(150%);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--header-border);
         border-radius: var(--radius-lg);
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: var(--shadow-md), inset 0 1px 0 var(--header-inset);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        will-change: border-color;
       }
 
       header:hover {
-        border-color: rgba(6, 182, 212, 0.1);
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(6, 182, 212, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        border-color: var(--color-primary-light);
+        box-shadow: var(--shadow-md), var(--shadow-glow), inset 0 1px 0 var(--header-inset);
       }
 
       .logo {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-family: 'Syne', sans-serif;
+        font-family: 'Plus Jakarta Sans', sans-serif;
         font-weight: 700;
         font-size: 17px;
         color: var(--color-text);
@@ -213,11 +321,11 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         color: var(--color-text-muted);
         padding: 8px 16px;
         border-radius: var(--radius-sm);
-        transition: all 0.2s ease;
+        transition: color 0.2s ease, background-color 0.2s ease;
       }
       nav a:hover {
         color: var(--color-text);
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--nav-hover-bg);
       }
       nav a[aria-current="page"] {
         color: var(--color-primary);
@@ -245,7 +353,7 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         font-family: 'Outfit', sans-serif;
         font-weight: 600;
         font-size: 13px;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
         border: 1px solid transparent;
         cursor: pointer;
         letter-spacing: 0.01em;
@@ -269,15 +377,14 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
 
       .btn-outline {
         background: transparent;
-        border: 1.5px solid rgba(255, 255, 255, 0.12);
+        border: 1.5px solid var(--outline-border);
         color: var(--color-text);
       }
       .btn-outline:hover {
         color: var(--color-text);
-        border-color: rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.04);
+        border-color: var(--outline-hover-border);
+        background: var(--outline-hover-bg);
         transform: translateY(-1px);
-        box-shadow: var(--shadow-sm);
       }
 
       .container {
@@ -289,20 +396,18 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       .section { padding: 100px 0 60px; }
 
       .card {
-        background: rgba(24, 24, 27, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
         border-radius: var(--radius-lg);
         padding: var(--space-4);
         position: relative;
         overflow: hidden;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
         box-shadow: var(--shadow-xs);
-        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: box-shadow 0.3s ease, border-color 0.3s ease;
       }
       .card:hover {
-        box-shadow: var(--shadow-md), 0 0 32px rgba(6, 182, 212, 0.05);
-        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: var(--shadow-md);
+        border-color: var(--card-border-hover);
       }
       .card::before { display: none; }
 
@@ -367,6 +472,130 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
       }
 
+      /* User pill in header */
+      .user-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 14px 4px 4px;
+        border-radius: var(--radius-full);
+        background: var(--pill-bg);
+        border: 1px solid var(--pill-border);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text);
+        transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.25s ease;
+        position: relative;
+        text-decoration: none;
+      }
+      .user-pill:hover {
+        background: var(--pill-hover-bg);
+        border-color: var(--color-primary-light);
+        color: var(--color-text);
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.08);
+      }
+      .user-pill[aria-current="page"] {
+        background: var(--color-primary-light);
+        border-color: rgba(6, 182, 212, 0.2);
+      }
+      .user-pill-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--gradient-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
+        color: white;
+        flex-shrink: 0;
+        letter-spacing: 0;
+      }
+      .user-pill-label {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .user-pill-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--color-success);
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+        flex-shrink: 0;
+      }
+
+      /* Smooth auth nav toggling */
+      .nav-auth-link {
+        transition: opacity 0.25s ease, transform 0.25s ease;
+      }
+      .nav-auth-hidden {
+        opacity: 0;
+        pointer-events: none;
+        position: absolute;
+        transform: scale(0.95);
+      }
+      .nav-auth-visible {
+        opacity: 1;
+        pointer-events: auto;
+        position: relative;
+        transform: scale(1);
+      }
+
+      /* Page transition loading bar */
+      .page-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        background: var(--gradient-primary);
+        z-index: 9999;
+        transition: width 0.3s ease;
+        pointer-events: none;
+        box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+      }
+
+      /* Astro view transition animations */
+      ::view-transition-old(root) {
+        animation: vtFadeOut 0.15s ease-in forwards;
+      }
+      ::view-transition-new(root) {
+        animation: vtFadeIn 0.25s ease-out forwards;
+      }
+      @keyframes vtFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+      @keyframes vtFadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Theme toggle */
+      .theme-toggle {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+        color: var(--color-text-muted);
+        border-radius: var(--radius-sm);
+        transition: color 0.2s ease, background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .theme-toggle:hover {
+        color: var(--color-text);
+        background: var(--nav-hover-bg);
+      }
+      /* Default: show sun (switch-to-light), hide moon — covers missing data-theme */
+      .theme-toggle .icon-sun { display: block; }
+      .theme-toggle .icon-moon { display: none; }
+      [data-theme="light"] .theme-toggle .icon-sun { display: none; }
+      [data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
       .muted { color: var(--color-text-muted); }
 
       .lead {
@@ -391,8 +620,8 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
 
       /* Form Elements */
       input, select, textarea {
-        background: #111113;
-        border: 1.5px solid rgba(255, 255, 255, 0.08);
+        background: var(--input-bg);
+        border: 1.5px solid var(--input-border);
         color: var(--color-text);
         padding: 10px 14px;
         border-radius: var(--radius-sm);
@@ -400,7 +629,7 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         font-size: 13px;
         width: 100%;
         outline: none;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
       }
 
       input::placeholder, select::placeholder, textarea::placeholder {
@@ -439,10 +668,10 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
           left: 50%;
           transform: translateX(-50%) translateY(-8px);
           width: 92%;
-          background: rgba(9, 9, 11, 0.95);
+          background: var(--mobile-nav-bg);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          border: 1px solid var(--header-border);
           border-radius: var(--radius-lg);
           padding: 16px;
           flex-direction: column;
@@ -450,7 +679,8 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
           box-shadow: var(--shadow-xl);
           opacity: 0;
           pointer-events: none;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: opacity, transform;
         }
 
         nav.is-open {
@@ -488,16 +718,24 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
       <nav aria-label="Main navigation" id="main-nav">
         <LanguageSwitcher locale={locale} />
         <a href={localePath('/pricing')} aria-current={pathWithoutLocale === '/pricing' ? "page" : undefined}>{t.nav.pricing}</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme" type="button">
+          <svg class="icon-sun" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
         <!-- Client-side auth-aware nav links -->
-        <a class="btn btn-primary" href={localePath('/auth')} data-nav="guest">{t.nav.signIn}</a>
-        <a href={localePath('/dashboard')} data-nav="user" style="display:none;" aria-current={pathWithoutLocale === '/dashboard' ? "page" : undefined}>{t.nav.dashboard}</a>
+        <a class="btn btn-primary nav-auth-link" href={localePath('/auth')} data-nav="guest">{t.nav.signIn}</a>
+        <a href={localePath('/dashboard')} class="user-pill nav-auth-link nav-auth-hidden" data-nav="user" aria-current={pathWithoutLocale === '/dashboard' ? "page" : undefined}>
+          <span class="user-pill-avatar" id="nav-avatar">U</span>
+          <span class="user-pill-label" id="nav-label">{t.nav.dashboard}</span>
+          <span class="user-pill-dot"></span>
+        </a>
       </nav>
     </header>
     <main class="container section">
       <slot />
     </main>
 
-    <footer style="background: #06060A; padding: 0 0 40px; border-top: none; position: relative;">
+    <footer style="background: var(--footer-bg); padding: 0 0 40px; border-top: none; position: relative;">
       <div style="height: 1px; background: var(--gradient-primary); opacity: 0.2; margin-bottom: 80px;"></div>
       <div class="container">
         <div class="grid grid-3" style="margin-bottom: 60px;">
@@ -535,7 +773,7 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
           </div>
         </div>
 
-        <div style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="border-top: 1px solid var(--footer-border); padding-top: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <p class="muted" style="font-size: 14px;">&copy; {new Date().getFullYear()} AutoBridge. {t.footer.copyright}</p>
         </div>
       </div>
@@ -543,19 +781,33 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
     <Toast locale={locale} />
 
     <script>
-      // Client-side auth detection for Layout navigation
-      function updateAuthUI() {
-        const isSignedIn = document.cookie.includes('ab_session');
+      // Session cache — avoids redundant API calls during navigation
+      let _sessionCache: { data: any; ts: number } | null = null;
+      const SESSION_TTL = 60_000; // 1 minute
 
-        // Toggle nav links
+      function getCachedSession(): Promise<any> {
+        if (_sessionCache && Date.now() - _sessionCache.ts < SESSION_TTL) {
+          return Promise.resolve(_sessionCache.data);
+        }
+        return fetch('/api/session', { method: 'POST', credentials: 'same-origin' })
+          .then(r => r.json())
+          .then(data => {
+            _sessionCache = { data, ts: Date.now() };
+            return data;
+          })
+          .catch(() => null);
+      }
+
+      // Smooth auth link toggling (opacity transition, no layout shift)
+      function toggleAuthLinks(isSignedIn: boolean) {
         document.querySelectorAll('[data-nav="guest"]').forEach(el => {
-          (el as HTMLElement).style.display = isSignedIn ? 'none' : '';
+          el.classList.toggle('nav-auth-hidden', isSignedIn);
+          el.classList.toggle('nav-auth-visible', !isSignedIn);
         });
         document.querySelectorAll('[data-nav="user"]').forEach(el => {
-          (el as HTMLElement).style.display = isSignedIn ? '' : 'none';
+          el.classList.toggle('nav-auth-hidden', !isSignedIn);
+          el.classList.toggle('nav-auth-visible', isSignedIn);
         });
-
-        // Also toggle CTA buttons (data-cta) if present on page
         document.querySelectorAll('[data-cta="guest"]').forEach(el => {
           (el as HTMLElement).style.display = isSignedIn ? 'none' : '';
         });
@@ -564,29 +816,82 @@ const localePath = (path: string) => `/${locale}${path === '/' ? '' : path}`;
         });
       }
 
+      function updateAuthUI() {
+        const isSignedIn = document.cookie.includes('ab_session');
+        toggleAuthLinks(isSignedIn);
+
+        if (isSignedIn) {
+          getCachedSession().then(data => {
+            if (data?.authenticated && data.email) {
+              const avatar = document.getElementById('nav-avatar');
+              const label = document.getElementById('nav-label');
+              if (avatar) avatar.textContent = data.email.charAt(0).toUpperCase();
+              if (label) label.textContent = data.displayName || data.email.split('@')[0];
+            }
+          });
+        }
+      }
+
+      // Theme toggle
+      function setupThemeToggle() {
+        const btn = document.getElementById('theme-toggle');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          const current = document.documentElement.getAttribute('data-theme') || 'dark';
+          const next = current === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          localStorage.setItem('ab-theme', next);
+        });
+      }
+
       // Mobile Menu Toggle
       function setupMobileMenu() {
         const btn = document.getElementById('mobile-menu-toggle');
         const nav = document.getElementById('main-nav');
         if (btn && nav) {
-            btn.addEventListener('click', () => {
-                nav.classList.toggle('is-open');
-            });
-            // Close menu when clicking links
-            nav.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', () => nav.classList.remove('is-open'));
-            });
+          btn.addEventListener('click', () => nav.classList.toggle('is-open'));
+          nav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => nav.classList.remove('is-open'));
+          });
         }
       }
 
-      // Run on load and after Astro page transitions
+      // Page transition loading bar
+      let progressBar: HTMLElement | null = null;
+      function showProgress() {
+        if (progressBar) progressBar.remove();
+        progressBar = document.createElement('div');
+        progressBar.className = 'page-progress';
+        progressBar.style.width = '0%';
+        document.body.appendChild(progressBar);
+        // Trigger reflow then animate
+        requestAnimationFrame(() => {
+          if (progressBar) progressBar.style.width = '70%';
+        });
+      }
+      function completeProgress() {
+        if (progressBar) {
+          progressBar.style.width = '100%';
+          progressBar.style.opacity = '0';
+          progressBar.style.transition = 'width 0.15s ease, opacity 0.3s ease 0.1s';
+          setTimeout(() => { progressBar?.remove(); progressBar = null; }, 400);
+        }
+      }
+
+      // Astro page transition hooks
+      document.addEventListener('astro:before-preparation', showProgress);
+      document.addEventListener('astro:after-swap', completeProgress);
+
+      // Init
       document.addEventListener('DOMContentLoaded', () => {
         updateAuthUI();
         setupMobileMenu();
+        setupThemeToggle();
       });
       document.addEventListener('astro:page-load', () => {
         updateAuthUI();
         setupMobileMenu();
+        setupThemeToggle();
       });
     </script>
   </body>

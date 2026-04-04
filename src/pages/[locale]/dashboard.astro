@@ -83,12 +83,17 @@ if (sub.periodEnd) {
 }
 const monthlyPrice = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
 const yearlyPrice = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
+const quarterlyPrice = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
+const halfyearlyPrice = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
 if (sub.priceId) {
-  if (monthlyPrice && sub.priceId === monthlyPrice) planLabel = "Monthly";
-  else if (yearlyPrice && sub.priceId === yearlyPrice) planLabel = "Annual";
+  if (monthlyPrice && sub.priceId === monthlyPrice) planLabel = "Starter Monthly";
+  else if (yearlyPrice && sub.priceId === yearlyPrice) planLabel = "Starter Annual";
+  else if (quarterlyPrice && sub.priceId === quarterlyPrice) planLabel = "Pro Monthly";
+  else if (halfyearlyPrice && sub.priceId === halfyearlyPrice) planLabel = "Pro Annual";
 }
 const urlError = new URL(Astro.request.url).searchParams.get("error");
 const urlSuccess = new URL(Astro.request.url).searchParams.get("success");
+const isWelcome = new URL(Astro.request.url).searchParams.get("welcome") === "1";
 let errorBanner: string | null = null;
 let successBanner: string | null = null;
 let errorCtaHref: string | null = null;
@@ -117,238 +122,534 @@ if (urlSuccess === "plan_change_scheduled") {
 ---
 <Layout title="Dashboard" locale={locale}>
 
+  <section class="dash-root">
 
-  <section class="container section" style="max-width: 1000px; padding-top: 30px;">
-
-    <div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end;">
-      <div>
-        <h1 style="font-family: 'Bricolage Grotesque', serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; color: var(--color-text);">Dashboard</h1>
-        <p class="muted" style="font-size: 14px;">Welcome back, {displayName.split(' ')[0]}</p>
+    <!-- Welcome Banner (only after fresh login) -->
+    {isWelcome && (
+      <div class="welcome-banner" id="welcome-banner">
+        <div class="welcome-banner-inner">
+          <div class="welcome-check">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div class="welcome-text">
+            <span class="welcome-title">You're in — extension is ready</span>
+            <span class="welcome-sub">Head to FastBack or CarCollect. AutoBridge works immediately, no refresh needed.</span>
+          </div>
+        </div>
+        <div class="welcome-progress" id="welcome-progress"></div>
       </div>
-      <form action="/auth/signout" method="POST">
-        <button class="btn btn-outline" style="font-size: 14px; padding: 8px 20px;">Sign out</button>
-      </form>
+    )}
+
+    <!-- Dashboard Header -->
+    <div class="dash-header animate-enter">
+      <div class="dash-identity">
+        <div class="dash-avatar">
+          <span>{avatarInitial}</span>
+          <div class="dash-avatar-ring"></div>
+        </div>
+        <div>
+          <h1 class="dash-title">Dashboard</h1>
+          <div class="dash-meta">
+            <span class="dash-online-dot"></span>
+            <span>{displayName}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a href={localePath("/activity")} class="btn btn-outline" style="font-size:13px;">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Activity
+        </a>
+        <form action="/auth/signout" method="POST">
+          <button class="btn btn-outline dash-signout">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </button>
+        </form>
+      </div>
     </div>
 
-    {
-      errorBanner ? (
-        <div class="card" style="border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); margin-bottom: 24px; padding: 16px;">
-          <strong style="color:#ef4444; display:flex; align-items:center; gap:6px; font-size: 13px;">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            Action Required
-          </strong>
-          <p class="muted" style="margin-top:4px; font-size: 13px;">{errorBanner}</p>
-          {
-            errorCtaHref && errorCtaLabel ? (
-              <div style="margin-top:12px">
-                <a class="btn" href={errorCtaHref}>{errorCtaLabel}</a>
-              </div>
-            ) : null
-          }
+    {/* Error/Success banners */}
+    {errorBanner && (
+      <div class="dash-alert dash-alert--error animate-enter stagger-1">
+        <div class="dash-alert-icon dash-alert-icon--error">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         </div>
-      ) : null
-    }
+        <div>
+          <strong>Action Required</strong>
+          <p>{errorBanner}</p>
+        </div>
+        {errorCtaHref && errorCtaLabel && (
+          <a class="btn btn-outline" href={errorCtaHref} style="margin-left:auto;">{errorCtaLabel}</a>
+        )}
+      </div>
+    )}
+    {successBanner && (
+      <div class="dash-alert dash-alert--success animate-enter stagger-1">
+        <div class="dash-alert-icon dash-alert-icon--success">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <strong>Success</strong>
+          <p>{successBanner}</p>
+        </div>
+        {successCtaHref && successCtaLabel && (
+          <a class="btn btn-outline" href={successCtaHref} style="margin-left:auto;">{successCtaLabel}</a>
+        )}
+      </div>
+    )}
 
-    {
-      successBanner ? (
-        <div class="card" style="border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); margin-bottom: 24px; padding: 16px;">
-           <strong style="color:#22c55e; display:flex; align-items:center; gap:6px; font-size: 13px;">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Success
-          </strong>
-          <p class="muted" style="margin-top:4px; font-size: 13px;">{successBanner}</p>
-          {
-            successCtaHref && successCtaLabel ? (
-              <div style="margin-top:12px">
-                <a class="btn" href={successCtaHref}>{successCtaLabel}</a>
-              </div>
-            ) : null
-          }
+    <!-- Stats Strip -->
+    <div class="dash-stats animate-enter stagger-1">
+      <div class="dash-stat">
+        <div class="dash-stat-label">Plan</div>
+        <div class="dash-stat-value">{planLabel ?? (sub.active ? "Active" : "Free")}</div>
+      </div>
+      <div class="dash-stat-divider"></div>
+      <div class="dash-stat">
+        <div class="dash-stat-label">Status</div>
+        <div class="dash-stat-value">
+          <span class={`dash-status-dot ${sub.active ? 'active' : 'inactive'}`}></span>
+          {sub.active ? "Active" : "Inactive"}
         </div>
-      ) : null
-    }
+      </div>
+      <div class="dash-stat-divider"></div>
+      <div class="dash-stat">
+        <div class="dash-stat-label">Invoices</div>
+        <div class="dash-stat-value">{invoicesCount}</div>
+      </div>
+      <div class="dash-stat-divider"></div>
+      <div class="dash-stat">
+        <div class="dash-stat-label">Next Billing</div>
+        <div class="dash-stat-value">{renewalDays !== null ? `${renewalDays}d` : "—"}</div>
+      </div>
+    </div>
 
     <div class="dashboard-grid">
       <!-- Main Column -->
       <div style="display: flex; flex-direction: column; gap: 20px;">
 
-        <!-- Subscription Status Card -->
-        <div class="card sub-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-            <div>
-              <p class="badge" style="margin-bottom: 8px; background: rgba(255,255,255,0.2); color: white; font-size: 10px;">Current Plan</p>
-              <h2 style="font-family: 'Bricolage Grotesque', serif; color: white; font-size: 1.5rem; margin: 0; letter-spacing: -0.02em;">{planLabel ?? (sub.active ? "Active Plan" : "Free Tier")}</h2>
+        <!-- Subscription Card -->
+        <div class="card sub-card animate-enter stagger-2">
+          <div class="sub-card-bg"></div>
+          <div style="position:relative; z-index:1; display:flex; flex-direction:column; height:100%;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+              <div>
+                <p class="sub-plan-badge">Current Plan</p>
+                <h2 class="sub-plan-title">{planLabel ?? (sub.active ? "Active Plan" : "Free Tier")}</h2>
+              </div>
+              {sub.active
+                ? <div class="status-pill active"><span class="status-pill-dot"></span>Active</div>
+                : <div class="status-pill inactive">Inactive</div>
+              }
             </div>
-            { sub.active ? <div class="status-pill active">Active</div> : <div class="status-pill inactive">Inactive</div> }
-          </div>
-
-          <div style="margin-top: auto;">
-             {
-              sub.active ? (
-                <div style="display:flex; justify-content: space-between; align-items: flex-end;">
-                   <div>
-                      <p style="color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 2px;">Next billing</p>
-                      <p style="color: white; font-weight: 600; font-size: 14px;">{nextBilling}</p>
-                   </div>
-                   <form action="/api/portal" method="POST">
-                      <LoadingButton style="background: white; color: var(--color-primary); border: none;">Manage Billing</LoadingButton>
-                   </form>
+            <div style="margin-top: auto;">
+              {sub.active ? (
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                  <div>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 11px; text-transform:uppercase; letter-spacing:1px; margin-bottom: 4px;">Next billing</p>
+                    <p style="color: white; font-weight: 700; font-size: 15px;">{nextBilling}</p>
+                  </div>
+                  <form action="/api/portal" method="POST">
+                    <LoadingButton style="background: white; color: #0d9488; border: none; font-weight:700;">Manage Billing</LoadingButton>
+                  </form>
                 </div>
               ) : (
-                <div style="display:flex; justify-content: space-between; align-items: center;">
-                  <p style="color: rgba(255,255,255,0.8);">Unlock full access to AutoBridge.</p>
-                  <a class="btn" href={localePath("/pricing")} style="background: white; color: var(--color-primary); border: none;">Upgrade Plan</a>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <p style="color: rgba(255,255,255,0.8); font-size:14px;">Unlock full access to AutoBridge.</p>
+                  <a class="btn" href={localePath("/pricing")} style="background:white; color:#0d9488; border:none; font-weight:700;">Upgrade Plan</a>
                 </div>
-              )
-            }
+              )}
+            </div>
           </div>
         </div>
 
         <!-- Invoices -->
-        <div class="card">
+        <div class="card animate-enter stagger-3">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 1rem; font-weight: 700;">Billing History</h3>
+            <h3 class="card-heading">Billing History</h3>
             <span class="muted" style="font-size: 12px;">Last 12 months</span>
           </div>
-
-          {
-            invoices.length > 0 ? (
-              <ul class="invoice-list">
-                {
-                  invoices.map((i) => (
-                    <li>
-                      <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 32px; height: 32px; background: var(--color-bg-subtle); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        </div>
-                        <div>
-                          <div style="font-family: 'Bricolage Grotesque', serif; font-weight: 600; font-size: 13px;">Invoice #{i.id.slice(-6).toUpperCase()}</div>
-                          <div class="muted" style="font-size: 12px;">{new Date(i.created * 1000).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                      <div style="display: flex; align-items: center; gap: 16px;">
-                        <span style="font-family: 'Bricolage Grotesque', serif; font-weight: 600; font-size: 13px;">{(i.amount_due / 100).toFixed(2)} {i.currency.toUpperCase()}</span>
-                        {
-                          i.invoice_pdf ? (
-                            <a href={i.invoice_pdf} target="_blank" rel="noreferrer" class="btn-icon" title="Download PDF">
-                              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                            </a>
-                          ) : null
-                        }
-                      </div>
-                    </li>
-                  ))
-                }
-              </ul>
-            ) : (
-              <div style="text-align: center; padding: 28px 0;">
-                <p class="muted" style="font-size: 13px;">No invoices found.</p>
+          {invoices.length > 0 ? (
+            <ul class="invoice-list">
+              {invoices.map((i) => (
+                <li>
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="invoice-icon">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div>
+                      <div class="invoice-id">Invoice #{i.id.slice(-6).toUpperCase()}</div>
+                      <div class="muted" style="font-size: 12px;">{new Date(i.created * 1000).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 16px;">
+                    <span class="invoice-amount">{(i.amount_due / 100).toFixed(2)} {i.currency.toUpperCase()}</span>
+                    {i.invoice_pdf && (
+                      <a href={i.invoice_pdf} target="_blank" rel="noreferrer" class="btn-icon" title="Download PDF">
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                      </a>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div style="text-align: center; padding: 32px 0;">
+              <div style="width:48px;height:48px;margin:0 auto 12px;background:var(--color-bg-subtle);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--color-text-dim);">
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               </div>
-            )
-          }
+              <p class="muted" style="font-size: 13px;">No invoices yet</p>
+            </div>
+          )}
         </div>
       </div>
 
       <!-- Side Column -->
       <div style="display: flex; flex-direction: column; gap: 20px;">
-        <!-- Profile Card -->
-        <div class="card">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom: 16px;">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--gradient-primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size: 20px; color: white; box-shadow: var(--shadow-primary);">
-              {avatarInitial}
-            </div>
-            <div>
-              <div style="font-weight:700; font-size: 1rem; line-height: 1.2;">{displayName}</div>
-              <div class="muted" style="font-size:13px">{userEmail}</div>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
-            <div style="background: var(--color-bg-subtle); padding: 10px; border-radius: var(--radius); text-align: center; border: 1px solid var(--color-border);">
-              <div class="muted" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700;">Invoices</div>
-              <div style="font-family: 'Bricolage Grotesque', serif; font-size: 20px; font-weight: 800; color: var(--color-text); margin-top: 2px;">{invoicesCount}</div>
-            </div>
-             <div style="background: var(--color-bg-subtle); padding: 10px; border-radius: var(--radius); text-align: center; border: 1px solid var(--color-border);">
-              <div class="muted" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700;">Next Bill</div>
-              <div style="font-family: 'Bricolage Grotesque', serif; font-size: 20px; font-weight: 800; color: var(--color-text); margin-top: 2px;">{renewalDays ?? "—"}d</div>
-            </div>
-          </div>
-        </div>
 
         <!-- Quick Actions -->
-        { sub.active ? (
-          <div class="card">
-            <h3 style="font-family: 'Bricolage Grotesque', serif; font-size: 14px; font-weight: 700; margin-bottom: 12px;">Quick Actions</h3>
+        {sub.active && (
+          <div class="card animate-enter stagger-2">
+            <h3 class="card-heading" style="margin-bottom: 14px;">Quick Actions</h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-              <form action="/api/portal" method="POST">
-                 <LoadingButton variant="outline" style="width: 100%; justify-content: flex-start;">
-                    Update Payment Method
-                 </LoadingButton>
-              </form>
-               <form action="/api/cancel" method="POST" id="cancel-form">
-                  <input type="hidden" name="at_period_end" value="true" />
-                  <LoadingButton variant="danger" style="width: 100%; justify-content: flex-start;">
-                    Cancel Subscription
-                  </LoadingButton>
+              <a href={localePath("/pricing")} class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 8px; text-decoration: none;">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                Change Plan
+              </a>
+              <form action="/api/cancel" method="POST" id="cancel-form">
+                <input type="hidden" name="at_period_end" value="true" />
+                <LoadingButton variant="danger" style="width: 100%; justify-content: flex-start;">
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  Cancel Subscription
+                </LoadingButton>
               </form>
             </div>
           </div>
-        ) : null }
+        )}
 
-        <div style="padding: 14px; text-align: center; background: var(--color-bg-subtle); border-radius: var(--radius); border: 1px solid var(--color-border);">
-           <p class="muted" style="font-size: 13px; margin-bottom: 6px;">Need help?</p>
-           <a href="mailto:support@fastscout.app" style="font-weight: 600; color: var(--color-primary); font-size: 13px;">Contact Support</a>
+        {!sub.active && (
+          <div class="card animate-enter stagger-2" style="background: var(--gradient-subtle); border-color: rgba(6, 182, 212, 0.15);">
+            <div style="text-align:center; padding: 8px 0;">
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <h3 class="card-heading" style="margin-bottom:6px;">Unlock AutoBridge</h3>
+              <p class="muted" style="font-size:13px; margin-bottom:16px;">Get full access to all features</p>
+              <a class="btn btn-primary" href={localePath("/pricing")} style="width:100%;">View Plans</a>
+            </div>
+          </div>
+        )}
+
+        <div class="dash-support animate-enter stagger-3">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-dim);"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="muted" style="font-size:13px;">Need help?</span>
+          <a href="mailto:support@autobridge.app" class="dash-support-link">Contact Support</a>
         </div>
       </div>
-
     </div>
   </section>
 
   <style>
+    .dash-root {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+    }
+
+    /* Welcome Banner */
+    .welcome-banner {
+      background: var(--color-success-light);
+      border: 1px solid var(--color-success-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      animation: welcomeSlide 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .welcome-banner-inner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .welcome-check {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--color-success-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-success);
+      flex-shrink: 0;
+      animation: checkPop 0.4s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .welcome-title {
+      display: block;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--color-success);
+    }
+    .welcome-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .welcome-sub {
+      display: block;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+    .welcome-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: var(--color-success);
+      animation: progressShrink 4s linear forwards;
+    }
+    @keyframes welcomeSlide {
+      from { opacity: 0; transform: translateY(-12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes checkPop {
+      from { opacity: 0; transform: scale(0.3); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes progressShrink {
+      from { width: 100%; }
+      to { width: 0%; }
+    }
+    .welcome-banner.hiding {
+      animation: welcomeSlide 0.3s ease-in reverse forwards;
+    }
+
+    /* Dashboard Header */
+    .dash-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .dash-identity {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .dash-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 22px;
+      color: white;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .dash-avatar-ring {
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid rgba(6, 182, 212, 0.2);
+      animation: glow 4s ease-in-out infinite;
+    }
+    .dash-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin: 0 0 2px;
+      line-height: 1;
+    }
+    .dash-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .dash-online-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-success);
+      box-shadow: 0 0 8px var(--color-success-border);
+    }
+    .dash-signout {
+      font-size: 13px;
+      padding: 8px 18px;
+      gap: 8px;
+    }
+
+    /* Alerts */
+    .dash-alert {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+    .dash-alert strong { font-size: 13px; display: block; }
+    .dash-alert p { margin: 2px 0 0; color: var(--color-text-muted); font-size: 13px; }
+    .dash-alert--error {
+      background: var(--color-danger-light);
+      border: 1px solid var(--color-danger-border);
+    }
+    .dash-alert--success {
+      background: var(--color-success-light);
+      border: 1px solid var(--color-success-border);
+    }
+    .dash-alert-icon {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .dash-alert-icon--error { background: var(--color-danger-light); color: var(--color-danger); }
+    .dash-alert-icon--success { background: var(--color-success-light); color: var(--color-success); }
+
+    /* Stats Strip */
+    .dash-stats {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 0;
+      margin-bottom: 24px;
+      backdrop-filter: blur(12px);
+    }
+    .dash-stat {
+      flex: 1;
+      text-align: center;
+      padding: 0 20px;
+    }
+    .dash-stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--color-text-dim);
+      margin-bottom: 4px;
+    }
+    .dash-stat-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .dash-stat-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--color-border);
+      flex-shrink: 0;
+    }
+    .dash-status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .dash-status-dot.active {
+      background: var(--color-success);
+      box-shadow: 0 0 8px var(--color-success-border);
+    }
+    .dash-status-dot.inactive {
+      background: var(--color-text-dim);
+    }
+
+    /* Grid */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 5fr 3fr;
       gap: 24px;
     }
+
+    /* Card headings */
+    .card-heading {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    /* Subscription Card */
     .sub-card {
-      background: var(--gradient-primary);
+      background: linear-gradient(135deg, #0d9488 0%, #0891b2 50%, #6366f1 100%);
       color: white;
       border: none;
-      min-height: 180px;
+      min-height: 200px;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 16px 40px -8px rgba(6, 182, 212, 0.3);
       border-radius: var(--radius-lg);
       position: relative;
       overflow: hidden;
+      box-shadow: 0 20px 50px -12px rgba(13, 148, 136, 0.35);
     }
-    .sub-card::after {
-      content: '';
+    .sub-card-bg {
       position: absolute;
-      top: 0; right: 0;
-      width: 200px;
-      height: 200px;
-      background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
       pointer-events: none;
     }
+    .sub-plan-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(4px);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    }
+    .sub-plan-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: white;
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    /* Status Pills */
     .status-pill {
       padding: 5px 14px;
       border-radius: var(--radius-full);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .status-pill.active {
-      background: #10B981;
-      color: white;
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
-    }
-    .status-pill.inactive {
       background: rgba(255,255,255,0.2);
       color: white;
+      backdrop-filter: blur(4px);
+    }
+    .status-pill-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
+    }
+    .status-pill.inactive {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.7);
     }
 
+    /* Invoice List */
     .invoice-list {
       list-style: none;
       padding: 0;
@@ -360,17 +661,28 @@ if (urlSuccess === "plan_change_scheduled") {
       justify-content: space-between;
       padding: 12px 0;
       border-bottom: 1px solid var(--color-border);
-      transition: background 0.15s ease;
     }
     .invoice-list li:last-child { border-bottom: none; padding-bottom: 0; }
     .invoice-list li:first-child { padding-top: 0; }
-
+    .invoice-icon {
+      width: 34px; height: 34px;
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted);
+    }
+    .invoice-id {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .invoice-amount {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+    }
     .btn-icon {
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-sm);
       color: var(--color-text-muted);
       transition: all 0.2s ease;
@@ -380,27 +692,69 @@ if (urlSuccess === "plan_change_scheduled") {
       color: var(--color-primary);
     }
 
+    /* Support footer */
+    .dash-support {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius);
+      border: 1px solid var(--color-border);
+    }
+    .dash-support-link {
+      font-weight: 600;
+      color: var(--color-primary);
+      font-size: 13px;
+      margin-left: auto;
+    }
+
     @media (max-width: 800px) {
       .dashboard-grid { grid-template-columns: 1fr; }
+      .dash-stats { flex-wrap: wrap; gap: 0; }
+      .dash-stat { min-width: 45%; padding: 10px 16px; }
+      .dash-stat-divider { display: none; }
+      .dash-header { flex-direction: column; align-items: flex-start; gap: 16px; }
     }
   </style>
 
   <script>
-    function initCancelConfirmation() {
+    function initDashboard() {
+      // Cancel confirmation
       const cancelForm = document.getElementById("cancel-form");
       if (cancelForm) {
         cancelForm.addEventListener("submit", (e) => {
           const confirmed = confirm(
             "Are you sure you want to cancel your subscription?\n\nYour access will continue until the end of your current billing period."
           );
-          if (!confirmed) {
-            e.preventDefault();
-          }
+          if (!confirmed) e.preventDefault();
         });
+      }
+
+      // Welcome banner auto-dismiss + URL cleanup + notify extension
+      const banner = document.getElementById("welcome-banner");
+      if (banner) {
+        // Clean the ?welcome=1 from URL immediately
+        const url = new URL(window.location.href);
+        url.searchParams.delete("welcome");
+        window.history.replaceState({}, "", url.pathname + (url.search || ""));
+
+        // Broadcast login event so extension picks it up instantly (no polling delay)
+        try {
+          new BroadcastChannel('ab-auth').postMessage({ type: 'login' });
+        } catch {}
+        // Also fire a custom DOM event for any extension content script on this page
+        window.dispatchEvent(new CustomEvent('ab:login'));
+
+        // Auto-dismiss after 5s
+        setTimeout(() => {
+          banner.classList.add("hiding");
+          setTimeout(() => banner.remove(), 300);
+        }, 5000);
       }
     }
 
-    document.addEventListener("DOMContentLoaded", initCancelConfirmation);
-    document.addEventListener("astro:page-load", initCancelConfirmation);
+    document.addEventListener("DOMContentLoaded", initDashboard);
+    document.addEventListener("astro:page-load", initDashboard);
   </script>
 </Layout>

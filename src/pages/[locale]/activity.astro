@@ -1,0 +1,336 @@
+---
+export const prerender = false;
+
+import Layout from "../../shared/Layout.astro";
+import { getAuthenticatedUser } from "../../lib/auth";
+import { getConvexClient } from "../../lib/convex";
+import { api } from "../../../convex/_generated/api";
+import { getLocaleFromUrl } from "../../i18n";
+
+const locale = getLocaleFromUrl(Astro.url);
+const localePath = (path: string) => `/${locale}${path}`;
+
+const sessionUser = getAuthenticatedUser(Astro.request);
+if (!sessionUser) return Astro.redirect(localePath("/auth"));
+const userId = sessionUser.userId;
+const email = sessionUser.email;
+const avatarInitial = (email || "U").slice(0, 1).toUpperCase();
+
+const convex = getConvexClient();
+
+// Fetch stats for current month
+const now = new Date();
+const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+const [stats, recentEvents] = await Promise.all([
+  convex.query(api.activityEvents.statsByUser, { userId, from: monthStart }),
+  convex.query(api.activityEvents.listByUser, { userId, limit: 20 }),
+]);
+
+const events = recentEvents.events || [];
+const nextCursor = recentEvents.nextCursor;
+
+function fmtDate(ts: number) {
+  return new Date(ts).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function fmtDuration(ms: number | undefined) {
+  if (!ms) return "—";
+  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+}
+
+function typeLabel(t: string) {
+  const map: Record<string, string> = { extraction: "Extract", search: "Search", manual_listing: "Listing", bid: "Bid", error: "Error" };
+  return map[t] || t;
+}
+
+function typeColor(t: string) {
+  const map: Record<string, string> = { extraction: "#6366f1", search: "#0ea5e9", manual_listing: "#10b981", bid: "#f59e0b", error: "#ef4444" };
+  return map[t] || "#6b7280";
+}
+
+function statusBadge(s: string | undefined) {
+  if (!s) return "";
+  const colors: Record<string, string> = { success: "#10b981", partial: "#f59e0b", failed: "#ef4444" };
+  return `<span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${colors[s] || '#6b7280'}22;color:${colors[s] || '#6b7280'}">${s}</span>`;
+}
+
+// Funnel data
+const funnel = stats.funnel;
+const funnelMax = Math.max(funnel.extraction, funnel.search, funnel.listing, funnel.bid, 1);
+function funnelPct(v: number) { return Math.max(2, Math.round((v / funnelMax) * 100)); }
+function funnelConv(a: number, b: number) { return a > 0 ? Math.round((b / a) * 100) : 0; }
+---
+<Layout title="Activity" locale={locale}>
+  <section class="dash-root">
+
+    <!-- Header -->
+    <div class="dash-header animate-enter">
+      <div class="dash-identity">
+        <div class="dash-avatar">
+          <span>{avatarInitial}</span>
+          <div class="dash-avatar-ring"></div>
+        </div>
+        <div>
+          <h1 class="dash-title">Activity</h1>
+          <div class="dash-meta">
+            <span class="dash-online-dot"></span>
+            <span>{email}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a href={localePath("/dashboard")} class="btn btn-outline" style="font-size:13px;">Dashboard</a>
+        <a href={`/api/activity/export?from=${new Date(monthStart).toISOString().slice(0,10)}`} class="btn btn-outline" style="font-size:13px;" download>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Strip -->
+    <div class="dash-stats animate-enter stagger-1">
+      <div class="dash-stat">
+        <div class="dash-stat-label">Total Actions</div>
+        <div class="dash-stat-value">{stats.total}</div>
+      </div>
+      <div class="dash-stat-divider"></div>
+      <div class="dash-stat">
+        <div class="dash-stat-label">Searches</div>
+        <div class="dash-stat-value">{stats.counts.search}</div>
+      </div>
+      <div class="dash-stat-divider"></div>
+      <div class="dash-stat">
+        <div class="dash-stat-label">Listings</div>
+        <div class="dash-stat-value">
+          {stats.counts.manual_listing}
+          {stats.listing.successRate > 0 && <span style="font-size:12px;color:#10b981;margin-left:4px;">{stats.listing.successRate}%</span>}
+        </div>
+      </div>
+      <div class="dash-stat-divider"></div>
+      <div class="dash-stat">
+        <div class="dash-stat-label">Bids</div>
+        <div class="dash-stat-value">{stats.counts.bid}</div>
+      </div>
+    </div>
+
+    <!-- Funnel -->
+    <div class="card animate-enter stagger-2" style="margin-bottom:20px;">
+      <h3 class="card-heading" style="margin-bottom:16px;">Conversion Funnel <span style="font-size:12px;color:#9ca3af;font-weight:400;">This month</span></h3>
+      <div class="funnel">
+        <div class="funnel-row">
+          <span class="funnel-label">Extractions</span>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style={`width:${funnelPct(funnel.extraction)}%;background:#6366f1;`}>{funnel.extraction}</div></div>
+        </div>
+        <div class="funnel-conv">{funnelConv(funnel.extraction, funnel.search)}%</div>
+        <div class="funnel-row">
+          <span class="funnel-label">Searches</span>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style={`width:${funnelPct(funnel.search)}%;background:#0ea5e9;`}>{funnel.search}</div></div>
+        </div>
+        <div class="funnel-conv">{funnelConv(funnel.search, funnel.listing)}%</div>
+        <div class="funnel-row">
+          <span class="funnel-label">Listings</span>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style={`width:${funnelPct(funnel.listing)}%;background:#10b981;`}>{funnel.listing}</div></div>
+        </div>
+        <div class="funnel-conv">{funnelConv(funnel.listing, funnel.bid)}%</div>
+        <div class="funnel-row">
+          <span class="funnel-label">Bids</span>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style={`width:${funnelPct(funnel.bid)}%;background:#f59e0b;`}>{funnel.bid}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Timeline -->
+    <div class="card animate-enter stagger-3">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3 class="card-heading">Activity Timeline</h3>
+      </div>
+
+      <!-- Filters -->
+      <div class="activity-filters" id="filters">
+        <button class="filter-btn active" data-type="all">All</button>
+        <button class="filter-btn" data-type="extraction">Extractions</button>
+        <button class="filter-btn" data-type="search">Searches</button>
+        <button class="filter-btn" data-type="manual_listing">Listings</button>
+        <button class="filter-btn" data-type="bid">Bids</button>
+        <button class="filter-btn" data-type="error">Errors</button>
+      </div>
+
+      <!-- Table -->
+      <div class="activity-table-wrap">
+        <table class="activity-table" id="activity-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Vehicle</th>
+              <th>Platform</th>
+              <th>Source</th>
+              <th>AS24</th>
+              <th>Status</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody id="activity-tbody">
+            {events.map((e: any) => (
+              <tr data-type={e.type}>
+                <td style="white-space:nowrap;">{fmtDate(e.ts)}</td>
+                <td><span class="type-badge" style={`background:${typeColor(e.type)}22;color:${typeColor(e.type)};`}>{typeLabel(e.type)}</span></td>
+                <td>{e.car ? `${e.car.brand} ${e.car.model}` : "—"}</td>
+                <td style="text-transform:capitalize;">{e.platform}</td>
+                <td>{e.sourceUrl ? <a href={e.sourceUrl} target="_blank" rel="noopener" class="link-icon" title="Source">&#x2197;</a> : "—"}</td>
+                <td>{e.as24Url ? <a href={e.as24Url} target="_blank" rel="noopener" class="link-icon" title="AutoScout24">&#x2197;</a> : "—"}</td>
+                <td><Fragment set:html={statusBadge(e.result?.status)} /></td>
+                <td>{fmtDuration(e.result?.durationMs)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {nextCursor && (
+        <button class="btn btn-outline" id="load-more" data-cursor={nextCursor} style="margin-top:12px;width:100%;">
+          Load more
+        </button>
+      )}
+    </div>
+
+  </section>
+
+  <style is:inline>
+    .dash-root { max-width: 900px; margin: 0 auto; padding: 32px 16px 48px; }
+    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .dash-identity { display: flex; align-items: center; gap: 14px; }
+    .dash-avatar { position: relative; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0d9488, #14b8a6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; }
+    .dash-avatar-ring { position: absolute; inset: -3px; border-radius: 50%; border: 2px solid rgba(13,148,136,0.2); }
+    .dash-title { font-size: 22px; font-weight: 800; color: #111827; letter-spacing: -0.3px; }
+    .dash-meta { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6b7280; }
+    .dash-online-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+    .dash-stats { display: flex; background: white; border-radius: 14px; padding: 18px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 20px; gap: 0; }
+    .dash-stat { flex: 1; text-align: center; }
+    .dash-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #9ca3af; margin-bottom: 4px; }
+    .dash-stat-value { font-size: 20px; font-weight: 800; color: #111827; }
+    .dash-stat-divider { width: 1px; background: #e5e7eb; margin: 0 4px; }
+    .card { background: white; border-radius: 14px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .card-heading { font-size: 16px; font-weight: 700; color: #111827; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; text-decoration: none; transition: all 0.15s; }
+    .btn-outline { background: transparent; border: 1px solid #e5e7eb; color: #374151; }
+    .btn-outline:hover { background: #f9fafb; border-color: #d1d5db; }
+
+    /* Funnel */
+    .funnel { display: flex; flex-direction: column; gap: 6px; }
+    .funnel-row { display: flex; align-items: center; gap: 12px; }
+    .funnel-label { width: 90px; font-size: 13px; font-weight: 600; color: #374151; text-align: right; flex-shrink: 0; }
+    .funnel-bar-wrap { flex: 1; background: #f3f4f6; border-radius: 6px; height: 28px; overflow: hidden; }
+    .funnel-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 12px; font-weight: 700; color: white; min-width: 32px; transition: width 0.4s ease; }
+    .funnel-conv { text-align: center; font-size: 11px; color: #9ca3af; padding: 0 0 0 102px; }
+
+    /* Filters */
+    .activity-filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-btn { padding: 5px 14px; border-radius: 20px; border: 1px solid #e5e7eb; background: white; font-size: 12px; font-weight: 600; color: #6b7280; cursor: pointer; transition: all 0.15s; }
+    .filter-btn.active { background: #111827; color: white; border-color: #111827; }
+    .filter-btn:hover:not(.active) { background: #f3f4f6; }
+
+    /* Table */
+    .activity-table-wrap { overflow-x: auto; }
+    .activity-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .activity-table th { text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #9ca3af; border-bottom: 1px solid #f3f4f6; font-weight: 600; }
+    .activity-table td { padding: 10px 10px; border-bottom: 1px solid #f9fafb; color: #374151; }
+    .activity-table tr:hover td { background: #fafbfc; }
+    .activity-table tr.hidden { display: none; }
+    .type-badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; }
+    .link-icon { text-decoration: none; font-size: 16px; color: #0ea5e9; }
+    .link-icon:hover { color: #0284c7; }
+
+    .animate-enter { animation: fadeUp 0.35s ease both; }
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 640px) {
+      .dash-root { padding: 16px 10px 32px; }
+      .dash-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .dash-stats { flex-wrap: wrap; padding: 14px 12px; }
+      .dash-stat { min-width: 70px; }
+      .funnel-label { width: 70px; font-size: 11px; }
+      .activity-table { font-size: 12px; }
+      .activity-table th, .activity-table td { padding: 6px 6px; }
+    }
+  </style>
+
+  <script>
+    function initActivity() {
+      // Filter buttons
+      const filters = document.getElementById("filters");
+      const tbody = document.getElementById("activity-tbody");
+      if (filters && tbody) {
+        filters.addEventListener("click", (e) => {
+          const btn = (e.target as HTMLElement).closest(".filter-btn") as HTMLElement | null;
+          if (!btn) return;
+          const type = btn.dataset.type;
+          filters.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          tbody.querySelectorAll("tr").forEach((row: Element) => {
+            const tr = row as HTMLElement;
+            if (type === "all" || tr.dataset.type === type) {
+              tr.classList.remove("hidden");
+            } else {
+              tr.classList.add("hidden");
+            }
+          });
+        });
+      }
+
+      // Load more
+      const loadMore = document.getElementById("load-more") as HTMLButtonElement | null;
+      if (loadMore) {
+        loadMore.addEventListener("click", async () => {
+          const cursor = loadMore.dataset.cursor;
+          if (!cursor) return;
+          loadMore.textContent = "Loading...";
+          loadMore.disabled = true;
+
+          const typeFilter = (filters?.querySelector(".filter-btn.active") as HTMLElement)?.dataset.type;
+          const params = new URLSearchParams({ cursor, limit: "20" });
+          if (typeFilter && typeFilter !== "all") params.set("type", typeFilter);
+
+          try {
+            const resp = await fetch(`/api/activity?${params}`);
+            const data = await resp.json();
+            if (data.events && tbody) {
+              for (const e of data.events) {
+                const tr = document.createElement("tr");
+                tr.dataset.type = e.type;
+                const car = e.car ? `${e.car.brand} ${e.car.model}` : "—";
+                const srcLink = e.sourceUrl ? `<a href="${e.sourceUrl}" target="_blank" rel="noopener" class="link-icon">↗</a>` : "—";
+                const as24Link = e.as24Url ? `<a href="${e.as24Url}" target="_blank" rel="noopener" class="link-icon">↗</a>` : "—";
+                const status = e.result?.status || "";
+                const statusColors: Record<string, string> = { success: "#10b981", partial: "#f59e0b", failed: "#ef4444" };
+                const statusHtml = status ? `<span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${statusColors[status] || '#6b7280'}22;color:${statusColors[status] || '#6b7280'}">${status}</span>` : "";
+                const dur = e.result?.durationMs ? (e.result.durationMs < 1000 ? `${e.result.durationMs}ms` : `${(e.result.durationMs / 1000).toFixed(1)}s`) : "—";
+                const typeColors: Record<string, string> = { extraction: "#6366f1", search: "#0ea5e9", manual_listing: "#10b981", bid: "#f59e0b", error: "#ef4444" };
+                const typeLabels: Record<string, string> = { extraction: "Extract", search: "Search", manual_listing: "Listing", bid: "Bid", error: "Error" };
+                const tc = typeColors[e.type] || "#6b7280";
+                const date = new Date(e.ts).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+                tr.innerHTML = `<td style="white-space:nowrap;">${date}</td><td><span class="type-badge" style="background:${tc}22;color:${tc};">${typeLabels[e.type] || e.type}</span></td><td>${car}</td><td style="text-transform:capitalize;">${e.platform}</td><td>${srcLink}</td><td>${as24Link}</td><td>${statusHtml}</td><td>${dur}</td>`;
+                tbody.appendChild(tr);
+              }
+              if (data.nextCursor) {
+                loadMore.dataset.cursor = String(data.nextCursor);
+                loadMore.textContent = "Load more";
+                loadMore.disabled = false;
+              } else {
+                loadMore.remove();
+              }
+            }
+          } catch {
+            loadMore.textContent = "Error — try again";
+            loadMore.disabled = false;
+          }
+        });
+      }
+    }
+    document.addEventListener("DOMContentLoaded", initActivity);
+    document.addEventListener("astro:page-load", initActivity);
+  </script>
+</Layout>

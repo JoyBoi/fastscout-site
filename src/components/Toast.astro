@@ -39,9 +39,9 @@ const t = useTranslations(locale);
     align-items: center;
     gap: 12px;
     padding: 16px 20px;
-    background: white;
+    background: var(--color-bg-elevated, #1F1F23);
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-lg, 0 10px 40px rgba(0, 0, 0, 0.15));
     border: 1px solid var(--color-border, #e2e8f0);
     min-width: 300px;
     max-width: 450px;
@@ -92,7 +92,7 @@ const t = useTranslations(locale);
   .toast-message {
     font-size: 14px;
     font-weight: 500;
-    color: var(--color-text, #0f172a);
+    color: var(--color-text);
     line-height: 1.4;
   }
 
@@ -100,7 +100,7 @@ const t = useTranslations(locale);
     background: none;
     border: none;
     font-size: 20px;
-    color: var(--color-text-muted, #64748b);
+    color: var(--color-text-muted);
     cursor: pointer;
     padding: 0;
     width: 24px;
@@ -113,7 +113,7 @@ const t = useTranslations(locale);
   }
 
   .toast-close:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--nav-hover-bg, rgba(0, 0, 0, 0.05));
   }
 
   @keyframes slideIn {

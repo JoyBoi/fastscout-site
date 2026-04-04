@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import jwt from "jsonwebtoken";
 import { getAuthenticatedUser } from "../../lib/auth";
 import stripe from "../../lib/stripe";
 import { corsHeaders, preflight } from "../../lib/cors";
@@ -36,25 +35,6 @@ export const POST: APIRoute = async (ctx) => {
     if (typeof plan === "string") body.plan = plan;
     if (typeof priceId === "string") body.price_id = priceId;
   } catch {}
-  const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
-  const hasWrapper = !!base && /^https?:\/\/.*/.test(base);
-  if (hasWrapper) {
-    const secret = import.meta.env.JWT_SECRET as string;
-    const accessToken = jwt.sign({ userId, email }, secret, { expiresIn: "5m" });
-    const res = await fetch(`${base}/change-plan`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      if (txt.includes("missing_price_id")) {
-        return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=missing_price_id`, ...corsHeaders(ctx.request) } as Record<string, string> });
-      }
-      return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=change_plan_failed`, ...corsHeaders(ctx.request) } as Record<string, string> });
-    }
-    return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?success=plan_change_scheduled`, ...corsHeaders(ctx.request) } as Record<string, string> });
-  }
   const monthly = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
   const yearly = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
   const fallback = import.meta.env.STRIPE_PRICE_ID as string | undefined;

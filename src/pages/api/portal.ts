@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import jwt from "jsonwebtoken";
 import { getAuthenticatedUser } from "../../lib/auth";
 import stripe from "../../lib/stripe";
 import { corsHeaders, preflight } from "../../lib/cors";
@@ -26,21 +25,6 @@ export const POST: APIRoute = async (ctx) => {
   }
   // Fail closed: deny on rate limit error (don't allow if mutation fails)
   if (!allowed) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
-
-  const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
-
-  if (base && /^https?:\/\/.*/.test(base)) {
-    const secret = import.meta.env.JWT_SECRET as string;
-    const accessToken = jwt.sign({ userId, email }, secret, { expiresIn: "5m" });
-    const res = await fetch(`${base}/create-portal-session`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (res.ok) {
-      const json = await res.json() as { url?: string };
-      return new Response(null, { status: 302, headers: { Location: json.url ?? siteUrl, ...corsHeaders(ctx.request) } as Record<string, string> });
-    }
-  }
 
   let customerId: string | undefined;
   const billingCustomer = await convex.query(api.billingCustomers.getByUserId, { userId });

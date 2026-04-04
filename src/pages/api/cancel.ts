@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
-import jwt from "jsonwebtoken";
 import { getAuthenticatedUser } from "../../lib/auth";
-import { corsHeaders } from "../../lib/cors";
+import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
 import { getConvexClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
 
@@ -23,9 +22,6 @@ export const POST: APIRoute = async (ctx) => {
   }
   if (!allowed) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=rate_limited` } });
 
-  const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
-  if (!base || !/^https?:\/\/.*/.test(base)) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=misconfigured_edge_function` } });
-
   let atPeriodEnd = true;
   try {
     const form = await (ctx.request as Request).formData();
@@ -33,13 +29,28 @@ export const POST: APIRoute = async (ctx) => {
     if (typeof val === "string") atPeriodEnd = val === "true";
   } catch {}
 
-  const secret = import.meta.env.JWT_SECRET as string;
-  const accessToken = jwt.sign({ userId, email }, secret, { expiresIn: "5m" });
-  const res = await fetch(`${base}/cancel`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
-    body: JSON.stringify({ at_period_end: atPeriodEnd }),
-  });
-  if (!res.ok) return new Response("Failed to cancel", { status: res.status });
+  const billing = await convex.query(api.billingCustomers.getByUserId, { userId });
+  let sub;
+  if (billing?.stripeCustomerId) {
+    sub = await findActiveSubscriptionByCustomerId(billing.stripeCustomerId);
+  } else {
+    sub = await findActiveSubscriptionByEmail(email);
+  }
+  if (!sub.active || !sub.customerId) {
+    return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=no_active_subscription` } });
+  }
+
+  const subscriptions = await stripe.subscriptions.list({ customer: sub.customerId, status: "active", limit: 1 });
+  const subscription = subscriptions.data[0];
+  if (!subscription) {
+    return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=no_active_subscription` } });
+  }
+
+  if (atPeriodEnd) {
+    await stripe.subscriptions.update(subscription.id, { cancel_at_period_end: true });
+  } else {
+    await stripe.subscriptions.cancel(subscription.id);
+  }
+
   return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard` } });
 };

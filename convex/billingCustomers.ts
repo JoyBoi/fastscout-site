@@ -11,6 +11,16 @@ export const getByUserId = query({
   },
 });
 
+export const getByStripeCustomerId = query({
+  args: { stripeCustomerId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("billingCustomers")
+      .withIndex("by_stripeCustomerId", (q) => q.eq("stripeCustomerId", args.stripeCustomerId))
+      .unique();
+  },
+});
+
 export const upsert = mutation({
   args: {
     userId: v.string(),

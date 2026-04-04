@@ -41,7 +41,7 @@ export const POST: APIRoute = async (ctx) => {
   return new Response(null, {
     status: 302,
     headers: {
-      Location: `/${locale}/dashboard`,
+      Location: `/${locale}/dashboard?welcome=1`,
       "Set-Cookie": cookieHeader,
     },
   });

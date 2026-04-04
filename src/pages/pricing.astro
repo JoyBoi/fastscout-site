@@ -24,15 +24,10 @@ else if (urlError === "already_subscribed") errorBanner = "You already have an a
 let subActive = false;
 let subPriceId: string | undefined;
 
-// Fetch subscription and billing data from Convex in parallel
 const convex = getConvexClient();
 const [status, billing] = await Promise.all([
-  userId
-    ? convex.query(api.subscriptions.getByUserId, { userId })
-    : Promise.resolve(null),
-  userId
-    ? convex.query(api.billingCustomers.getByUserId, { userId })
-    : Promise.resolve(null),
+  userId ? convex.query(api.subscriptions.getByUserId, { userId }) : Promise.resolve(null),
+  userId ? convex.query(api.billingCustomers.getByUserId, { userId }) : Promise.resolve(null),
 ]);
 
 if (status) {
@@ -40,7 +35,6 @@ if (status) {
   subPriceId = status.priceId ?? undefined;
 }
 
-// Only call Stripe if DB says not active
 if (!subActive && userEmail && userId) {
   const customerId = billing?.stripeCustomerId as string | undefined;
   if (customerId) {
@@ -58,245 +52,244 @@ const quarterlyId = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefi
 const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
 ---
 <Layout title="Pricing">
-  <section style="max-width: 760px; margin: 0 auto;">
-    <div style="text-align: center; margin-bottom: 48px;">
-      <h2 style="font-family: 'Syne', sans-serif; font-size: clamp(28px, 3.5vw, 40px); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 12px; color: var(--color-text);">Simple Pricing</h2>
-      <p style="font-size: 14px; color: var(--color-text-muted); max-width: 460px; margin: 0 auto; line-height: 1.6;">Transparent pricing for professionals. Choose the plan that fits your workflow.</p>
+  <section class="pricing-section" data-billing="monthly">
+    <div class="pricing-glow"></div>
+
+    <div class="pricing-header">
+      <span class="pricing-badge">Pricing</span>
+      <h2 class="pricing-title">Choose your plan</h2>
+      <p class="pricing-subtitle">Transparent pricing for automotive professionals.</p>
     </div>
 
-    <style is:inline>
-      .pricing-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
-        max-width: 760px;
-        margin: 0 auto;
-      }
+    <div class="toggle-wrapper">
+      <div class="toggle-track" id="billing-toggle">
+        <div class="toggle-indicator"></div>
+        <button class="toggle-btn active" data-period="monthly" type="button">Monthly</button>
+        <button class="toggle-btn" data-period="annual" type="button">Annual</button>
+      </div>
+      <span class="toggle-save" id="toggle-save">-15%</span>
+    </div>
 
-      .plan {
-        padding: 32px;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        border-radius: var(--radius-lg);
-        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-
-      .plan:hover {
-        transform: translateY(-4px);
-      }
-
-      .plan--featured {
-        border: 2px solid transparent;
-        background: linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box,
-                    var(--gradient-primary) border-box;
-        box-shadow: 0 16px 32px -8px rgba(6, 182, 212, 0.12);
-        position: relative;
-      }
-
-      .plan--featured::before {
-        content: '';
-        display: block;
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 3px;
-        background: var(--gradient-primary);
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-      }
-
-      .plan-header { margin-bottom: 24px; }
-
-      .plan-header h3 {
-        font-family: 'Syne', sans-serif;
-        font-size: 17px;
-        font-weight: 600;
-      }
-
-      .price-tag {
-        font-family: 'Syne', sans-serif;
-        font-size: 36px;
-        font-weight: 800;
-        color: var(--color-text);
-        line-height: 1;
-        letter-spacing: -0.03em;
-      }
-
-      .price-period {
-        font-size: 14px;
-        color: var(--color-text-muted);
-        font-weight: 500;
-      }
-
-      .plan-desc {
-        font-size: 13px;
-        color: var(--color-text-muted);
-        margin-top: 10px;
-        line-height: 1.5;
-      }
-
-      .plan-annual {
-        margin-top: 6px;
-        font-size: 12px;
-        color: var(--color-primary);
-        font-weight: 600;
-        line-height: 1.5;
-      }
-      .plan-annual s {
-        color: var(--color-text-muted);
-        font-weight: 400;
-      }
-
-      .feature-list { margin: 24px 0; flex-grow: 1; }
-      .feature-list li { margin-bottom: 14px; }
-
-      .plan-actions {
-        margin-top: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .plan-actions form { width: 100%; }
-
-      @media (max-width: 768px) {
-        .pricing-grid { grid-template-columns: 1fr; max-width: 380px; }
-      }
-    </style>
-
-    {
-      errorBanner ? (
-        <div class="card" style="border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); margin-bottom:24px; text-align:center">
-          <strong style="color:#ef4444">Error</strong>
-          <p style="margin-top:6px; font-size: 14px; color: var(--color-text-muted);">{errorBanner}</p>
-          {
-            urlError === "already_subscribed" ? (
-              <div style="margin-top:10px">
-                <a class="btn" href="/dashboard">Go to dashboard</a>
-              </div>
-            ) : null
-          }
-        </div>
-      ) : null
-    }
+    {errorBanner && (
+      <div class="pricing-error">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span>{errorBanner}</span>
+        {urlError === "already_subscribed" && (
+          <a class="btn btn-outline" href="/dashboard" style="margin-left:auto; font-size:12px; padding:6px 14px;">Dashboard</a>
+        )}
+      </div>
+    )}
 
     <div class="pricing-grid">
-      <!-- Starter Plan -->
-      <div class="card plan">
-        <div class="plan-header">
-          <h3 style="margin-bottom: 8px;">Starter</h3>
-          <div style="display:flex; align-items:baseline; gap:6px">
-            <span class="price-tag">50&euro;</span>
-            <span class="price-period">/mois</span>
-          </div>
-          <p class="plan-desc">Jusqu'a 500 vehicules par mois.</p>
-          <p class="plan-annual">Annuel : 510&euro;/an <s>600&euro;</s> <span class="badge">-15%</span></p>
+      <div class="plan-card plan-card--starter">
+        <div class="plan-top">
+          <h3 class="plan-name">Starter</h3>
+          <p class="plan-tagline">Get started</p>
         </div>
-
-        <ul class="feature-list">
-          <li>500 vehicules / mois</li>
-          <li>Chrome Extension</li>
-          <li>Dashboard complet</li>
-          <li>Support standard</li>
+        <div class="plan-price-block">
+          <div class="price-row price-monthly">
+            <span class="price-amount">50&euro;</span>
+            <span class="price-period">/mo</span>
+          </div>
+          <div class="price-row price-annual">
+            <span class="price-amount">42.50&euro;</span>
+            <span class="price-period">/mo</span>
+            <span class="price-was"><s>50&euro;</s></span>
+          </div>
+          <p class="price-billed price-annual">Billed 510&euro;/year</p>
+        </div>
+        <ul class="plan-features">
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><strong>500</strong> vehicles / month</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>FastBack & CarCollect extraction</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>AutoScout24 auto-mapping</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Chrome Extension</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Dashboard & history</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Email support</span></li>
         </ul>
-
-        <div class="plan-actions">
-        {
-          subActive && subPriceId === monthlyId ? (
-            <button class="btn btn-outline" style="width: 100%;" disabled>Plan actuel</button>
-          ) : (
-            <form action="/api/checkout" method="POST">
-              <input type="hidden" name="plan" value="monthly" />
-              <LoadingButton variant="outline" style="width: 100%;">Choisir Starter mensuel</LoadingButton>
-            </form>
-          )
-        }
-        {
-          subActive && subPriceId === yearlyId ? (
-            <button class="btn btn-outline" style="width: 100%;" disabled>Plan actuel</button>
-          ) : (
-            <form action="/api/checkout" method="POST">
-              <input type="hidden" name="plan" value="annual" />
-              <LoadingButton variant="outline" style="width: 100%;">Choisir Starter annuel</LoadingButton>
-            </form>
-          )
-        }
+        <div class="plan-cta">
+          <div class="cta-monthly">
+            {subActive && subPriceId === monthlyId ? (
+              <button class="btn-plan btn-plan--outline" disabled>Current plan</button>
+            ) : (
+              <form action="/api/checkout" method="POST"><input type="hidden" name="plan" value="monthly" /><LoadingButton variant="outline" style="width:100%;">Get Started</LoadingButton></form>
+            )}
+          </div>
+          <div class="cta-annual">
+            {subActive && subPriceId === yearlyId ? (
+              <button class="btn-plan btn-plan--outline" disabled>Current plan</button>
+            ) : (
+              <form action="/api/checkout" method="POST"><input type="hidden" name="plan" value="annual" /><LoadingButton variant="outline" style="width:100%;">Get Started</LoadingButton></form>
+            )}
+          </div>
         </div>
       </div>
 
-      <!-- Pro Plan (Featured) -->
-      <div class="card plan plan--featured">
-        <div class="plan-header">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-            <h3 style="margin:0;">Pro</h3>
-            <span class="badge">Illimite</span>
-          </div>
-          <div style="display:flex; align-items:baseline; gap:6px">
-            <span class="price-tag">250&euro;</span>
-            <span class="price-period">/mois</span>
-          </div>
-          <p class="plan-desc">Vehicules illimites, pour les pros.</p>
-          <p class="plan-annual">Annuel : 2 550&euro;/an <s>3 000&euro;</s> <span class="badge">-15%</span></p>
+      <div class="plan-card plan-card--pro">
+        <div class="plan-glow-bar"></div>
+        <div class="plan-popular-badge">Most Popular</div>
+        <div class="plan-top">
+          <h3 class="plan-name">Pro</h3>
+          <p class="plan-tagline pro-tagline">Unlimited vehicles</p>
         </div>
-
-        <ul class="feature-list">
-          <li><strong>Vehicules illimites</strong></li>
-          <li>Chrome Extension</li>
-          <li>Dashboard complet</li>
-          <li>Support prioritaire</li>
-          <li>Acces anticipe aux nouveautes</li>
+        <div class="plan-price-block">
+          <div class="price-row price-monthly">
+            <span class="price-amount">250&euro;</span>
+            <span class="price-period">/mo</span>
+          </div>
+          <div class="price-row price-annual">
+            <span class="price-amount">212.50&euro;</span>
+            <span class="price-period">/mo</span>
+            <span class="price-was"><s>250&euro;</s></span>
+          </div>
+          <p class="price-billed price-annual">Billed 2,550&euro;/year</p>
+        </div>
+        <ul class="plan-features plan-features--pro">
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><strong>Unlimited vehicles</strong></span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>FastBack & CarCollect extraction</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>AutoScout24 auto-mapping</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Chrome Extension</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Dashboard & advanced analytics</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Priority support</span></li>
+          <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Early access to new features</span></li>
         </ul>
-
-        <div class="plan-actions">
-        {
-          subActive && subPriceId === quarterlyId ? (
-            <button class="btn btn-primary" style="width: 100%;" disabled>Plan actuel</button>
-          ) : (
-            <form action="/api/checkout" method="POST">
-              <input type="hidden" name="plan" value="quarterly" />
-              <LoadingButton variant="primary" style="width: 100%;">Choisir Pro mensuel</LoadingButton>
-            </form>
-          )
-        }
-        {
-          subActive && subPriceId === halfyearlyId ? (
-            <button class="btn btn-primary" style="width: 100%;" disabled>Plan actuel</button>
-          ) : (
-            <form action="/api/checkout" method="POST">
-              <input type="hidden" name="plan" value="halfyearly" />
-              <LoadingButton variant="primary" style="width: 100%;">Choisir Pro annuel</LoadingButton>
-            </form>
-          )
-        }
+        <div class="plan-cta">
+          <div class="cta-monthly">
+            {subActive && subPriceId === quarterlyId ? (
+              <button class="btn-plan btn-plan--primary" disabled>Current plan</button>
+            ) : (
+              <form action="/api/checkout" method="POST"><input type="hidden" name="plan" value="quarterly" /><LoadingButton variant="primary" style="width:100%;">Go Pro</LoadingButton></form>
+            )}
+          </div>
+          <div class="cta-annual">
+            {subActive && subPriceId === halfyearlyId ? (
+              <button class="btn-plan btn-plan--primary" disabled>Current plan</button>
+            ) : (
+              <form action="/api/checkout" method="POST"><input type="hidden" name="plan" value="halfyearly" /><LoadingButton variant="primary" style="width:100%;">Go Pro</LoadingButton></form>
+            )}
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-top: 48px; text-align: left; padding: 32px;">
-      <h3 style="font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 24px;">Frequently Asked Questions</h3>
-      <div class="grid grid-2" style="gap: 24px;">
-        <div>
-          <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--color-text);">Can I cancel anytime?</h4>
-          <p class="muted" style="font-size: 13px; line-height: 1.7;">Yes, absolutely. You can cancel your subscription at any time from your dashboard settings. Your access will continue until the end of your billing period.</p>
-        </div>
-        <div>
-          <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--color-text);">How are invoices handled?</h4>
-          <p class="muted" style="font-size: 13px; line-height: 1.7;">Invoices are automatically generated and emailed to you. You can also view and download past invoices directly from your dashboard.</p>
-        </div>
-      </div>
+    <div class="trust-row">
+      <div class="trust-item"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg><span>Secure payments via Stripe</span></div>
+      <div class="trust-item"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Cancel anytime</span></div>
+      <div class="trust-item"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg><span>No hidden fees</span></div>
     </div>
 
-    <div style="display: flex; justify-content: center; gap: 32px; margin-top: 36px; flex-wrap: wrap;">
-      <div style="display: flex; align-items: center; gap: 6px; color: var(--color-text-dim); font-size: 12px; font-weight: 500;">
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-        Secure payments via Stripe
-      </div>
-      <div style="display: flex; align-items: center; gap: 6px; color: var(--color-text-dim); font-size: 12px; font-weight: 500;">
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Cancel anytime
-      </div>
-      <div style="display: flex; align-items: center; gap: 6px; color: var(--color-text-dim); font-size: 12px; font-weight: 500;">
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-        No hidden fees
+    <div class="faq-section">
+      <h3 class="faq-title">Frequently Asked Questions</h3>
+      <div class="faq-list" id="faq-list">
+        <div class="faq-item"><button class="faq-question" type="button"><span>Can I cancel anytime?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>Yes, absolutely. You can cancel your subscription at any time from your dashboard. Your access continues until the end of your billing period.</p></div></div>
+        <div class="faq-item"><button class="faq-question" type="button"><span>How are invoices handled?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>Invoices are automatically generated and emailed to you. You can also view and download past invoices from your dashboard.</p></div></div>
+        <div class="faq-item"><button class="faq-question" type="button"><span>What happens if I exceed 500 vehicles?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>With the Starter plan, you're limited to 500 vehicles per month. If you need more, upgrade to Pro for unlimited access.</p></div></div>
+        <div class="faq-item"><button class="faq-question" type="button"><span>How does the Chrome extension work?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>AutoBridge connects to FastBack and CarCollect, extracts vehicle data, and automatically maps it to AutoScout24 fields. One click and your listing is ready.</p></div></div>
       </div>
     </div>
   </section>
+
+  <style is:inline>
+    .pricing-section{max-width:880px;margin:0 auto;padding:0 24px 80px;position:relative}
+    .pricing-glow{position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:700px;height:500px;background:radial-gradient(ellipse at center,rgba(6,182,212,.06) 0%,rgba(99,102,241,.03) 40%,transparent 70%);pointer-events:none;z-index:0}
+    .pricing-header{text-align:center;margin-bottom:40px;position:relative;z-index:1;animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both}
+    .pricing-badge{display:inline-block;padding:5px 14px;border-radius:var(--radius-full);background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.15);color:var(--color-primary);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:18px}
+    .pricing-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.03em;color:var(--color-text);margin:0 0 12px;line-height:1.1}
+    .pricing-subtitle{font-size:15px;color:var(--color-text-muted);max-width:420px;margin:0 auto;line-height:1.6}
+    .toggle-wrapper{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:44px;position:relative;z-index:1;animation:fadeUp .6s .1s cubic-bezier(.16,1,.3,1) both}
+    .toggle-track{display:flex;position:relative;background:var(--color-bg-subtle);border:1px solid var(--color-border, rgba(255,255,255,.08));border-radius:var(--radius-full);padding:4px}
+    .toggle-indicator{position:absolute;top:4px;left:4px;width:calc(50% - 4px);height:calc(100% - 8px);border-radius:var(--radius-full);background:var(--color-primary-light);border:1px solid rgba(6,182,212,.2);transition:transform .35s cubic-bezier(.16,1,.3,1)}
+    .toggle-track[data-active="annual"] .toggle-indicator{transform:translateX(100%)}
+    .toggle-btn{position:relative;z-index:1;padding:8px 24px;border:none;background:transparent;color:var(--color-text-dim);font-size:13px;font-weight:600;cursor:pointer;transition:color .3s ease;font-family:inherit}
+    .toggle-btn.active{color:var(--color-text)}
+    .toggle-save{display:inline-block;padding:4px 10px;border-radius:var(--radius-full);background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.2);color:#10B981;font-size:11px;font-weight:700;letter-spacing:.3px;opacity:0;transform:scale(.8);transition:all .35s cubic-bezier(.34,1.56,.64,1)}
+    .toggle-save.visible{opacity:1;transform:scale(1)}
+    .pricing-error{display:flex;align-items:center;gap:10px;padding:12px 18px;margin-bottom:28px;border-radius:var(--radius);background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);color:#f87171;font-size:13px;position:relative;z-index:1}
+    .pricing-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;position:relative;z-index:1}
+    .plan-card{padding:40px 32px 36px;border-radius:var(--radius-lg);display:flex;flex-direction:column;position:relative;transition:all .4s cubic-bezier(.16,1,.3,1);animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both}
+    .plan-card:hover{transform:translateY(-6px)}
+    .plan-card--starter{background:var(--card-bg);backdrop-filter:blur(20px);border:1px solid var(--card-border);animation-delay:.15s}
+    .plan-card--starter:hover{border-color:var(--card-border-hover);box-shadow:var(--shadow-lg)}
+    .plan-card--pro{background:linear-gradient(var(--color-bg-card),var(--color-bg-card)) padding-box,var(--gradient-primary) border-box;border:2px solid transparent;backdrop-filter:blur(20px);box-shadow:var(--shadow-primary);animation-delay:.25s}
+    .plan-card--pro:hover{box-shadow:0 28px 70px -12px rgba(6,182,212,.22)}
+    .plan-glow-bar{position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient-primary);border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+    .plan-popular-badge{position:absolute;top:16px;right:20px;padding:4px 12px;border-radius:var(--radius-full);background:var(--color-primary-light);border:1px solid rgba(6,182,212,.2);color:var(--color-primary);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+    .plan-top{margin-bottom:28px}
+    .plan-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;margin:0 0 4px;letter-spacing:-.01em}
+    .plan-tagline{font-size:13px;color:var(--color-text-dim);margin:0}
+    .pro-tagline{color:var(--color-primary);font-weight:600}
+    .plan-price-block{margin-bottom:28px;min-height:72px}
+    .price-row{display:flex;align-items:baseline;gap:4px}
+    .price-amount{font-family:'Plus Jakarta Sans',sans-serif;font-size:48px;font-weight:800;color:var(--color-text);line-height:1;letter-spacing:-.04em}
+    .price-period{font-size:15px;color:var(--color-text-dim);font-weight:500}
+    .price-was{font-size:14px;color:var(--color-text-dim);margin-left:8px}
+    .price-billed{font-size:12px;color:var(--color-text-dim);margin:6px 0 0}
+    .price-annual{display:none}
+    [data-billing="annual"] .price-monthly{display:none}
+    [data-billing="annual"] .price-annual{display:flex}
+    [data-billing="annual"] p.price-annual{display:block}
+    .price-row{animation:priceIn .3s cubic-bezier(.16,1,.3,1) both}
+    .cta-annual{display:none}
+    [data-billing="annual"] .cta-monthly{display:none}
+    [data-billing="annual"] .cta-annual{display:block}
+    .plan-features{list-style:none;padding:0;margin:0 0 32px;flex-grow:1}
+    .plan-features li{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13.5px;color:var(--color-text-muted);line-height:1.4}
+    .plan-features li strong{color:var(--color-text);font-weight:700}
+    .check-icon{flex-shrink:0;color:var(--color-text-dim)}
+    .plan-features--pro .check-icon{color:var(--color-primary)}
+    .feature-soon{opacity:.5}
+    .soon-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:2px 7px;border-radius:var(--radius-full);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#F59E0B}
+    .plan-cta{margin-top:auto}
+    .plan-cta form{width:100%}
+    .btn-plan{width:100%;padding:12px 24px;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;transition:all .3s ease;font-family:inherit;border:none}
+    .btn-plan:disabled{opacity:.5;cursor:not-allowed}
+    .btn-plan--outline{background:transparent;border:1px solid var(--card-border-hover);color:var(--color-text)}
+    .btn-plan--primary{background:var(--gradient-primary);color:white}
+    .trust-row{display:flex;justify-content:center;gap:36px;margin-top:48px;flex-wrap:wrap;position:relative;z-index:1;animation:fadeUp .6s .35s cubic-bezier(.16,1,.3,1) both}
+    .trust-item{display:flex;align-items:center;gap:8px;color:var(--color-text-dim);font-size:12px;font-weight:500}
+    .faq-section{margin-top:64px;max-width:640px;margin-left:auto;margin-right:auto;position:relative;z-index:1;animation:fadeUp .6s .4s cubic-bezier(.16,1,.3,1) both}
+    .faq-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;margin:0 0 24px;letter-spacing:-.02em;text-align:center}
+    .faq-list{display:flex;flex-direction:column;gap:2px}
+    .faq-item{border-radius:var(--radius);overflow:hidden;background:var(--card-bg);border:1px solid var(--card-border);transition:border-color .3s ease}
+    .faq-item.open{border-color:var(--card-border-hover)}
+    .faq-question{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 20px;border:none;background:transparent;color:var(--color-text);font-size:14px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;transition:color .2s}
+    .faq-question:hover{color:var(--color-primary)}
+    .faq-chevron{flex-shrink:0;color:var(--color-text-dim);transition:transform .3s cubic-bezier(.16,1,.3,1)}
+    .faq-item.open .faq-chevron{transform:rotate(180deg)}
+    .faq-answer{max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.16,1,.3,1)}
+    .faq-item.open .faq-answer{max-height:200px}
+    .faq-answer p{padding:0 20px 16px;margin:0;font-size:13px;color:var(--color-text-muted);line-height:1.7}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;max-width:420px;margin:0 auto}.plan-card--pro{order:-1}.price-amount{font-size:40px}.plan-card{padding:32px 24px 28px}.trust-row{flex-direction:column;align-items:center;gap:16px}.pricing-glow{width:100%}}
+  </style>
+
+  <script>
+    function initPricing() {
+      const section = document.querySelector('.pricing-section');
+      const toggle = document.getElementById('billing-toggle');
+      const saveBadge = document.getElementById('toggle-save');
+      const btns = toggle?.querySelectorAll('.toggle-btn');
+      const faqList = document.getElementById('faq-list');
+      btns?.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const period = btn.getAttribute('data-period');
+          if (!period || !section || !toggle || !saveBadge) return;
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          toggle.setAttribute('data-active', period);
+          section.setAttribute('data-billing', period);
+          saveBadge.classList.toggle('visible', period === 'annual');
+        });
+      });
+      faqList?.querySelectorAll('.faq-item').forEach(item => {
+        const question = item.querySelector('.faq-question');
+        question?.addEventListener('click', () => {
+          const wasOpen = item.classList.contains('open');
+          faqList.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+          if (!wasOpen) item.classList.add('open');
+        });
+      });
+    }
+    document.addEventListener('DOMContentLoaded', initPricing);
+    document.addEventListener('astro:page-load', initPricing);
+  </script>
 </Layout>

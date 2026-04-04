@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import jwt from "jsonwebtoken";
 import { getAuthenticatedUser } from "../../lib/auth";
 import stripe, { findActiveSubscriptionByEmail } from "../../lib/stripe";
 import { preflight, corsHeaders } from "../../lib/cors";
@@ -42,21 +41,6 @@ export const POST: APIRoute = async (ctx) => {
   if (!allowed) {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
-  const base = import.meta.env.STRIPE_WRAPPER_BASE_URL as string;
-  if (base && /^https?:\/\/.*/.test(base)) {
-    const secret = import.meta.env.JWT_SECRET as string;
-    const accessToken = jwt.sign({ userId, email }, secret, { expiresIn: "5m" });
-    const res = await fetch(`${base}/create-checkout-session`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
-      body: JSON.stringify(priceId ? { price_id: priceId } : {}),
-    });
-    if (res.ok) {
-      const json = await res.json() as { url?: string };
-      return new Response(null, { status: 302, headers: { Location: json.url ?? siteUrl, ...corsHeaders(ctx.request) } as Record<string, string> });
-    }
-  }
-
   const existing = await findActiveSubscriptionByEmail(email);
   if (existing.active) {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=already_subscribed`, ...corsHeaders(ctx.request) } as Record<string, string> });
@@ -69,6 +53,8 @@ export const POST: APIRoute = async (ctx) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${siteUrl}/dashboard`,
       cancel_url: `${siteUrl}/pricing`,
+      metadata: { userId },
+      subscription_data: { metadata: { userId } },
     });
     return new Response(null, { status: 302, headers: { Location: sessionStripe.url ?? siteUrl, ...corsHeaders(ctx.request) } as Record<string, string> });
   } catch {
