@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../lib/cors";
 import { getAuthenticatedUser } from "../../../lib/auth";
-import stripe from "../../../lib/stripe";
 import { getConvexClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
 
@@ -93,12 +92,13 @@ export const POST: APIRoute = async (ctx) => {
     );
   }
 
-  // Report billable events to Stripe Billing Meter (fire-and-forget)
+  // Report billable events to Stripe Billing Meter (fire-and-forget, lazy-load stripe)
   if (payload.type === "extraction" || payload.type === "manual_listing") {
     try {
       const billing = await convex.query(api.billingCustomers.getByUserId, { userId });
       if (billing?.stripeCustomerId) {
-        await stripe.billing.meterEvents.create({
+        const { default: stripeClient } = await import("../../../lib/stripe");
+        await stripeClient.billing.meterEvents.create({
           event_name: "vehicle_listing",
           payload: {
             value: "1",
