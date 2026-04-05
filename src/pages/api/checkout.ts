@@ -46,11 +46,25 @@ export const POST: APIRoute = async (ctx) => {
     return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=already_subscribed`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
   if (!priceId) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/pricing?error=missing_price_id`, ...corsHeaders(ctx.request) } as Record<string, string> });
+
+  // Determine metered price for extra vehicle usage based on selected plan
+  const isStarter = plan === "monthly" || plan === "annual" || !plan;
+  const meteredPriceId = isStarter
+    ? (import.meta.env.STRIPE_METERED_PRICE_ID_STARTER as string | undefined)
+    : (import.meta.env.STRIPE_METERED_PRICE_ID_PRO as string | undefined);
+
+  const lineItems: Array<{ price: string; quantity?: number }> = [
+    { price: priceId, quantity: 1 },
+  ];
+  if (meteredPriceId) {
+    lineItems.push({ price: meteredPriceId });
+  }
+
   try {
     const sessionStripe = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer_email: email,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: lineItems,
       success_url: `${siteUrl}/dashboard`,
       cancel_url: `${siteUrl}/pricing`,
       metadata: { userId },

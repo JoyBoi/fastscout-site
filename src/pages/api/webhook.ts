@@ -63,13 +63,25 @@ export const POST: APIRoute = async (ctx) => {
           : session.subscription?.id;
         if (subscriptionId) {
           const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const basePriceId = sub.items.data[0]?.price?.id;
+
+          // Find metered item (usage_type === "metered") and determine plan limit
+          const meteredItem = sub.items.data.find(
+            (item) => item.price.recurring?.usage_type === "metered"
+          );
+          const starterMetered = import.meta.env.STRIPE_METERED_PRICE_ID_STARTER;
+          const isStarter = meteredItem?.price.id === starterMetered;
+          const planLimit = isStarter ? 500 : 5000;
+
           await convex.mutation(api.subscriptions.upsert, {
             userId,
             active: sub.status === "active" || sub.status === "trialing",
-            priceId: sub.items.data[0]?.price?.id,
+            priceId: basePriceId,
             currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+            planLimit,
+            meteredItemId: meteredItem?.id,
           });
-          console.log(`Subscription synced: userId=${userId} active=${sub.status === "active" || sub.status === "trialing"}`);
+          console.log(`Subscription synced: userId=${userId} active=${sub.status === "active" || sub.status === "trialing"} planLimit=${planLimit} meteredItem=${meteredItem?.id}`);
         }
         break;
       }
@@ -85,13 +97,22 @@ export const POST: APIRoute = async (ctx) => {
           break;
         }
         const active = sub.status === "active" || sub.status === "trialing";
+        const meteredItem = sub.items.data.find(
+          (item) => item.price.recurring?.usage_type === "metered"
+        );
+        const starterMetered = import.meta.env.STRIPE_METERED_PRICE_ID_STARTER;
+        const isStarter = meteredItem?.price.id === starterMetered;
+        const planLimit = meteredItem ? (isStarter ? 500 : 5000) : undefined;
+
         await convex.mutation(api.subscriptions.upsert, {
           userId,
           active,
-          priceId: sub.items.data[0]?.price?.id,
+          priceId: sub.items.data.find((item) => item.price.recurring?.usage_type !== "metered")?.price?.id,
           currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+          planLimit,
+          meteredItemId: meteredItem?.id,
         });
-        console.log(`Subscription updated: userId=${userId} active=${active} price=${sub.items.data[0]?.price?.id}`);
+        console.log(`Subscription updated: userId=${userId} active=${active} planLimit=${planLimit} meteredItem=${meteredItem?.id}`);
         break;
       }
 

@@ -43,7 +43,15 @@ export default defineSchema({
     active: v.boolean(),
     priceId: v.optional(v.string()),
     currentPeriodEnd: v.optional(v.string()),
+    planLimit: v.optional(v.number()),
+    meteredItemId: v.optional(v.string()),
   }).index("by_userId", ["userId"]),
+
+  usageCounters: defineTable({
+    userId: v.string(),
+    periodStart: v.number(),
+    vehicleCount: v.number(),
+  }).index("by_userId_period", ["userId", "periodStart"]),
 
   billingCustomers: defineTable({
     userId: v.string(),

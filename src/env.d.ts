@@ -12,6 +12,8 @@ interface ImportMetaEnv {
   readonly STRIPE_PRICE_ID_QUARTERLY: string;
   readonly STRIPE_PRICE_ID_HALFYEARLY: string;
   readonly STRIPE_WEBHOOK_SECRET: string;
+  readonly STRIPE_METERED_PRICE_ID_STARTER: string;
+  readonly STRIPE_METERED_PRICE_ID_PRO: string;
   readonly JWT_SECRET: string;
   readonly CHROME_EXTENSION_ID: string;
   readonly EXTENSION_DATA_VERSION: string;

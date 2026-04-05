@@ -97,6 +97,7 @@ const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | unde
             <span class="price-was"><s>50&euro;</s></span>
           </div>
           <p class="price-billed price-annual">Billed 510&euro;/year</p>
+          <p class="price-extra">then 0.15&euro; / extra vehicle</p>
         </div>
         <ul class="plan-features">
           <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><strong>500</strong> vehicles / month</span></li>
@@ -142,6 +143,7 @@ const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | unde
             <span class="price-was"><s>250&euro;</s></span>
           </div>
           <p class="price-billed price-annual">Billed 2,550&euro;/year</p>
+          <p class="price-extra">then 0.08&euro; / extra vehicle</p>
         </div>
         <ul class="plan-features plan-features--pro">
           <li><svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><strong>Unlimited vehicles</strong></span></li>
@@ -182,8 +184,10 @@ const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | unde
       <div class="faq-list" id="faq-list">
         <div class="faq-item"><button class="faq-question" type="button"><span>Can I cancel anytime?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>Yes, absolutely. You can cancel your subscription at any time from your dashboard. Your access continues until the end of your billing period.</p></div></div>
         <div class="faq-item"><button class="faq-question" type="button"><span>How are invoices handled?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>Invoices are automatically generated and emailed to you. You can also view and download past invoices from your dashboard.</p></div></div>
-        <div class="faq-item"><button class="faq-question" type="button"><span>What happens if I exceed 500 vehicles?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>With the Starter plan, you're limited to 500 vehicles per month. If you need more, upgrade to Pro for unlimited access.</p></div></div>
+        <div class="faq-item"><button class="faq-question" type="button"><span>What happens if I exceed 500 vehicles?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>No blocking. Extra vehicles beyond your included quota are billed per unit. You can also upgrade to Pro for a higher quota and lower per-vehicle rate.</p></div></div>
         <div class="faq-item"><button class="faq-question" type="button"><span>How does the Chrome extension work?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>AutoBridge connects to FastBack and CarCollect, extracts vehicle data, and automatically maps it to AutoScout24 fields. One click and your listing is ready.</p></div></div>
+        <div class="faq-item"><button class="faq-question" type="button"><span>What happens if I exceed my quota?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>No blocking. Extra vehicles beyond your included quota are billed per unit (0.15&euro; for Starter, 0.08&euro; for Pro). The overage appears on your next invoice automatically.</p></div></div>
+        <div class="faq-item"><button class="faq-question" type="button"><span>How do I track my usage?</span><svg class="faq-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button><div class="faq-answer"><p>Your dashboard shows real-time vehicle count for the current month against your quota. You can also view detailed operation history.</p></div></div>
       </div>
     </div>
   </section>
@@ -223,6 +227,7 @@ const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | unde
     .price-period{font-size:15px;color:var(--color-text-dim);font-weight:500}
     .price-was{font-size:14px;color:var(--color-text-dim);margin-left:8px}
     .price-billed{font-size:12px;color:var(--color-text-dim);margin:6px 0 0}
+    .price-extra{font-size:11px;color:var(--color-text-dim);margin:8px 0 0;padding:5px 10px;background:var(--color-bg-subtle);border-radius:var(--radius-sm);border:1px dashed var(--card-border)}
     .price-annual{display:none}
     [data-billing="annual"] .price-monthly{display:none}
     [data-billing="annual"] .price-annual{display:flex}
@@ -262,7 +267,7 @@ const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | unde
     @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;max-width:420px;margin:0 auto}.plan-card--pro{order:-1}.price-amount{font-size:40px}.plan-card{padding:32px 24px 28px}.trust-row{flex-direction:column;align-items:center;gap:16px}.pricing-glow{width:100%}}
   </style>
 
-  <script>
+  <script is:inline>
     function initPricing() {
       const section = document.querySelector('.pricing-section');
       const toggle = document.getElementById('billing-toggle');

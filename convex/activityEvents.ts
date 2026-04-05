@@ -1,4 +1,5 @@
 import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
 const eventType = v.union(
@@ -61,6 +62,26 @@ const fieldResultValidator = v.optional(v.array(v.object({
 })));
 
 // ---------------------------------------------------------------------------
+// Helper: increment usage counter for billable events
+// ---------------------------------------------------------------------------
+async function incrementUsageCounter(ctx: any, userId: string) {
+  const now = new Date();
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const existing = await ctx.db
+    .query("usageCounters")
+    .withIndex("by_userId_period", (q: any) =>
+      q.eq("userId", userId).eq("periodStart", periodStart)
+    )
+    .unique();
+
+  if (existing) {
+    await ctx.db.patch(existing._id, { vehicleCount: existing.vehicleCount + 1 });
+  } else {
+    await ctx.db.insert("usageCounters", { userId, periodStart, vehicleCount: 1 });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Insert a single activity event
 // ---------------------------------------------------------------------------
 export const insert = mutation({
@@ -76,7 +97,11 @@ export const insert = mutation({
     fieldResults: fieldResultValidator,
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("activityEvents", args);
+    const id = await ctx.db.insert("activityEvents", args);
+    if (args.type === "extraction" || args.type === "manual_listing") {
+      await incrementUsageCounter(ctx, args.userId);
+    }
+    return id;
   },
 });
 
@@ -102,6 +127,9 @@ export const insertBatch = mutation({
     const ids = [];
     for (const event of batch) {
       ids.push(await ctx.db.insert("activityEvents", event));
+      if (event.type === "extraction" || event.type === "manual_listing") {
+        await incrementUsageCounter(ctx, event.userId);
+      }
     }
     return { inserted: ids.length };
   },

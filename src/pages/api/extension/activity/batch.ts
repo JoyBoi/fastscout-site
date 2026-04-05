@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../../lib/cors";
 import { getAuthenticatedUser } from "../../../../lib/auth";
+import stripe from "../../../../lib/stripe";
 import { getConvexClient } from "../../../../lib/convex";
 import { api } from "../../../../../convex/_generated/api";
 
@@ -79,6 +80,31 @@ export const POST: APIRoute = async (ctx) => {
 
   try {
     const result = await convex.mutation(api.activityEvents.insertBatch, { events: validEvents });
+
+    // Report billable events to Stripe Billing Meter
+    const billableCount = validEvents.filter(
+      (e) => e.type === "extraction" || e.type === "manual_listing"
+    ).length;
+    if (billableCount > 0) {
+      try {
+        const billing = await convex.query(api.billingCustomers.getByUserId, { userId });
+        if (billing?.stripeCustomerId) {
+          // Send individual meter events (Stripe requires one per event)
+          for (let i = 0; i < billableCount; i++) {
+            await stripe.billing.meterEvents.create({
+              event_name: "vehicle_listing",
+              payload: {
+                value: "1",
+                stripe_customer_id: billing.stripeCustomerId,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to report batch meter events:", err);
+      }
+    }
+
     return new Response(JSON.stringify({ ok: true, inserted: result.inserted }), { status: 200, headers });
   } catch (err) {
     return new Response(

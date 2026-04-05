@@ -17,6 +17,8 @@ export const upsert = mutation({
     active: v.boolean(),
     priceId: v.optional(v.string()),
     currentPeriodEnd: v.optional(v.string()),
+    planLimit: v.optional(v.number()),
+    meteredItemId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -24,20 +26,22 @@ export const upsert = mutation({
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .unique();
 
+    const patch: Record<string, unknown> = {
+      active: args.active,
+      priceId: args.priceId,
+      currentPeriodEnd: args.currentPeriodEnd,
+    };
+    if (args.planLimit !== undefined) patch.planLimit = args.planLimit;
+    if (args.meteredItemId !== undefined) patch.meteredItemId = args.meteredItemId;
+
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        active: args.active,
-        priceId: args.priceId,
-        currentPeriodEnd: args.currentPeriodEnd,
-      });
+      await ctx.db.patch(existing._id, patch);
       return existing._id;
     } else {
       return await ctx.db.insert("subscriptionStatus", {
         userId: args.userId,
-        active: args.active,
-        priceId: args.priceId,
-        currentPeriodEnd: args.currentPeriodEnd,
-      });
+        ...patch,
+      } as typeof args);
     }
   },
 });

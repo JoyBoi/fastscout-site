@@ -19,6 +19,7 @@ import type * as models from "../models.js";
 import type * as rateLimit from "../rateLimit.js";
 import type * as reports from "../reports.js";
 import type * as subscriptions from "../subscriptions.js";
+import type * as usageCounters from "../usageCounters.js";
 import type * as users from "../users.js";
 
 import type {
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   rateLimit: typeof rateLimit;
   reports: typeof reports;
   subscriptions: typeof subscriptions;
+  usageCounters: typeof usageCounters;
   users: typeof users;
 }>;
 

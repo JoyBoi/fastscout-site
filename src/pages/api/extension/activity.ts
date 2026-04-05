@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../lib/cors";
 import { getAuthenticatedUser } from "../../../lib/auth";
+import stripe from "../../../lib/stripe";
 import { getConvexClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
 
@@ -90,6 +91,24 @@ export const POST: APIRoute = async (ctx) => {
       JSON.stringify({ error: "insert_failed", detail: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers },
     );
+  }
+
+  // Report billable events to Stripe Billing Meter (fire-and-forget)
+  if (payload.type === "extraction" || payload.type === "manual_listing") {
+    try {
+      const billing = await convex.query(api.billingCustomers.getByUserId, { userId });
+      if (billing?.stripeCustomerId) {
+        await stripe.billing.meterEvents.create({
+          event_name: "vehicle_listing",
+          payload: {
+            value: "1",
+            stripe_customer_id: billing.stripeCustomerId,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Failed to report meter event:", err);
+    }
   }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
