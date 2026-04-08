@@ -1,11 +1,11 @@
 import { defineConfig } from "astro/config";
-import cloudflare from "@astrojs/cloudflare";
+import vercel from "@astrojs/vercel/serverless";
 
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   output: "server",
-  adapter: cloudflare(),
+  adapter: vercel(),
 
   i18n: {
     defaultLocale: "fr",
@@ -23,5 +23,8 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    ssr: {
+      noExternal: ["@convex-dev/auth"],
+    },
   },
 });
