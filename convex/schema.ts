@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+<<<<<<< HEAD
 
 export default defineSchema({
   appConfig: defineTable({
@@ -17,6 +18,51 @@ export default defineSchema({
     makeId: v.id("makes"),
     name: v.string(),
   }).index("by_externalId", ["externalId"]).index("by_makeId", ["makeId"]),
+=======
+import { authTables } from "@convex-dev/auth/server";
+
+export default defineSchema({
+  ...authTables,
+
+  billingCustomers: defineTable({
+    userId: v.id("users"),
+    stripeCustomerId: v.string(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_stripeCustomerId", ["stripeCustomerId"]),
+
+  subscriptions: defineTable({
+    userId: v.id("users"),
+    stripeSubscriptionId: v.string(),
+    status: v.string(),
+    priceId: v.optional(v.string()),
+    periodEnd: v.optional(v.number()),
+    cancelAtPeriodEnd: v.boolean(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_stripeSubscriptionId", ["stripeSubscriptionId"]),
+
+  subscriptionQueue: defineTable({
+    userId: v.id("users"),
+    currentSubscriptionId: v.string(),
+    queuedSubscriptionId: v.string(),
+    startAt: v.number(),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("activated"),
+      v.literal("canceled"),
+      v.literal("failed"),
+    ),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_queuedSubscriptionId", ["queuedSubscriptionId"]),
+
+  subscriptionAuditLog: defineTable({
+    userId: v.id("users"),
+    eventType: v.string(),
+    details: v.any(),
+  }).index("by_userId", ["userId"]),
+>>>>>>> 764ee47 (feat: migrate auth and payments from Supabase to Convex + Stripe)
 
   missingEntries: defineTable({
     fingerprint: v.string(),
@@ -29,6 +75,7 @@ export default defineSchema({
     lastSeenAt: v.number(),
   }).index("by_fingerprint", ["fingerprint"]),
 
+<<<<<<< HEAD
   rateLimitEvents: defineTable({
     userId: v.string(),
     action: v.string(),
@@ -144,4 +191,44 @@ export default defineSchema({
     .index("by_userId_ts", ["userId", "ts"])
     .index("by_ts", ["ts"])
     .index("by_type_ts", ["type", "ts"]),
+=======
+  makes: defineTable({
+    makeId: v.string(),
+    name: v.string(),
+  })
+    .index("by_makeId", ["makeId"])
+    .index("by_name", ["name"]),
+
+  models: defineTable({
+    modelId: v.string(),
+    makeId: v.string(),
+    name: v.string(),
+  })
+    .index("by_makeId", ["makeId"])
+    .index("by_modelId", ["modelId"]),
+
+  appConfig: defineTable({
+    key: v.string(),
+    value: v.number(),
+  }).index("by_key", ["key"]),
+
+  reports: defineTable({
+    userId: v.optional(v.id("users")),
+    title: v.optional(v.string()),
+    description: v.string(),
+    type: v.union(
+      v.literal("bug"),
+      v.literal("feature_request"),
+      v.literal("other"),
+    ),
+    status: v.union(
+      v.literal("open"),
+      v.literal("in_progress"),
+      v.literal("resolved"),
+      v.literal("closed"),
+    ),
+    source: v.string(),
+    metadata: v.any(),
+  }).index("by_userId", ["userId"]),
+>>>>>>> 764ee47 (feat: migrate auth and payments from Supabase to Convex + Stripe)
 });

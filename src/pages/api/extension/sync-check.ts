@@ -3,7 +3,7 @@ import { corsHeaders, preflight } from "../../../lib/cors";
 
 export const prerender = false;
 
-export const POST: APIRoute = async (ctx) => {
+async function handleSyncCheck(ctx: Parameters<APIRoute>[0]): Promise<Response> {
   const pf = preflight(ctx.request);
   if (pf) return pf;
   const raw = (import.meta.env.EXTENSION_DATA_VERSION as string | undefined) ?? "1";
@@ -17,7 +17,10 @@ export const POST: APIRoute = async (ctx) => {
       ...corsHeaders(ctx.request),
     },
   });
-};
+}
+
+export const GET: APIRoute = handleSyncCheck;
+export const POST: APIRoute = handleSyncCheck;
 
 export const OPTIONS: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
