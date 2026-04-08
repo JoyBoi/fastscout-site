@@ -1,3 +1,4 @@
+"use node";
 import { action, httpAction, internalAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
@@ -196,21 +197,23 @@ export const getInvoices = action({
   },
 });
 
-export const handleStripeWebhook = httpAction(async (ctx, request) => {
-  const stripe = getStripe();
-  const sig = request.headers.get("stripe-signature");
-  const body = await request.text();
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
-  } catch {
-    return new Response("bad_signature", { status: 400 });
-  }
-  await ctx.runAction(internal.stripe.processWebhookEvent, {
-    eventType: event.type,
-    eventData: JSON.stringify(event.data.object),
-  });
-  return new Response("ok", { status: 200 });
+/** Called from http.ts via runAction to keep the Stripe SDK out of the V8 HTTP router. */
+export const handleWebhookRequest = internalAction({
+  args: { signature: v.string(), body: v.string() },
+  handler: async (ctx, { signature, body }) => {
+    const stripe = getStripe();
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
+    } catch {
+      return { status: 400, text: "bad_signature" };
+    }
+    await ctx.runAction(internal.stripe.processWebhookEvent, {
+      eventType: event.type,
+      eventData: JSON.stringify(event.data.object),
+    });
+    return { status: 200, text: "ok" };
+  },
 });
 
 export const processWebhookEvent = internalAction({
