@@ -1,48 +1,28 @@
 import type { APIRoute } from "astro";
-import { getAuthenticatedUser } from "../../lib/auth";
-import stripe from "../../lib/stripe";
+import { getConvexServerClient } from "../../lib/convex";
 import { corsHeaders, preflight } from "../../lib/cors";
-import { getConvexClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
 
 export const prerender = false;
 
-export const POST: APIRoute = async (ctx) => {
+async function handlePortal(ctx: Parameters<APIRoute>[0]): Promise<Response> {
   const pf = preflight(ctx.request);
   if (pf) return pf;
-  const sessionUser = getAuthenticatedUser(ctx.request);
-  if (!sessionUser) return new Response("Unauthorized", { status: 401, headers: { ...corsHeaders(ctx.request) } });
-  const userId = sessionUser.userId;
-  const email = sessionUser.email;
+  const siteUrl = import.meta.env.SITE_URL?.trim() as string;
+  const { client } = getConvexServerClient(ctx.request);
+  const viewer = await client.query(api.users.getViewer).catch(() => null);
+  if (!viewer) return new Response("Unauthorized", { status: 401, headers: { ...corsHeaders(ctx.request) } });
 
-  const convex = getConvexClient();
-  const siteUrl = import.meta.env.SITE_URL as string;
-  let allowed: boolean;
   try {
-    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "portal" });
-  } catch {
-    allowed = false;
+    const result = await client.action(api.stripe.createPortal);
+    return new Response(null, { status: 302, headers: { Location: (result as any).url ?? siteUrl, ...corsHeaders(ctx.request) } as Record<string, string> });
+  } catch (e: any) {
+    return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=${encodeURIComponent(e?.message ?? "portal_failed")}`, ...corsHeaders(ctx.request) } as Record<string, string> });
   }
-  // Fail closed: deny on rate limit error (don't allow if mutation fails)
-  if (!allowed) return new Response(null, { status: 302, headers: { Location: `${siteUrl}/dashboard?error=rate_limited`, ...corsHeaders(ctx.request) } as Record<string, string> });
+}
 
-  let customerId: string | undefined;
-  const billingCustomer = await convex.query(api.billingCustomers.getByUserId, { userId });
-  customerId = billingCustomer?.stripeCustomerId;
-  if (!customerId) {
-    const customers = await stripe.customers.list({ email, limit: 1 });
-    customerId = customers.data[0]?.id;
-    if (!customerId) return new Response("no_customer", { status: 404, headers: { ...corsHeaders(ctx.request) } });
-  }
-  const portal = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${siteUrl}/dashboard`,
-  });
-  return new Response(null, {
-    status: 302,
-    headers: { Location: portal.url ?? siteUrl, ...corsHeaders(ctx.request) } as Record<string, string>,
-  });
-};
+export const GET: APIRoute = handlePortal;
+export const POST: APIRoute = handlePortal;
 
 export const OPTIONS: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);

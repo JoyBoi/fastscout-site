@@ -1,9 +1,7 @@
 import type { APIRoute } from "astro";
 import jwt from "jsonwebtoken";
-import { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
-import { getAuthenticatedUser } from "../../lib/auth";
+import { getConvexServerClient } from "../../lib/convex";
 import { corsHeaders, preflight } from "../../lib/cors";
-import { getConvexClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
 
 export const prerender = false;
@@ -11,40 +9,25 @@ export const prerender = false;
 export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
   if (pf) return pf;
-  const sessionUser = getAuthenticatedUser(ctx.request);
-  if (!sessionUser) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
-  const email = sessionUser.email;
-  const userId = sessionUser.userId;
 
-  const convex = getConvexClient();
-  let allowed: boolean;
-  try {
-    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId, action: "token" });
-  } catch {
-    allowed = false;
-  }
-  // Fail closed: deny on rate limit error (don't allow if mutation fails)
-  if (!allowed) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+  const { client, token: convexToken } = getConvexServerClient(ctx.request);
+  if (!convexToken) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 
-  let customerId: string | undefined;
-  const status = await convex.query(api.subscriptions.getByUserId, { userId });
-  let active = !!status?.active;
-  if (!active) {
-    const billingCustomer = await convex.query(api.billingCustomers.getByUserId, { userId });
-    customerId = billingCustomer?.stripeCustomerId;
-    if (customerId) active = (await findActiveSubscriptionByCustomerId(customerId)).active;
-    else active = (await findActiveSubscriptionByEmail(email)).active;
-  }
+  const [viewer, sub] = await Promise.all([
+    client.query(api.users.getViewer).catch(() => null),
+    client.query(api.subscriptions.getStatus).catch(() => null),
+  ]);
+
+  if (!viewer) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
+
+  const active = sub ? sub.status === "active" || sub.status === "trialing" : false;
   if (!active) return new Response(JSON.stringify({ error: "no_subscription" }), { status: 402, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 
-  const payload = {
-    email,
-    customerId,
-    scope: ["bridge:access"],
-  };
   const secret = import.meta.env.JWT_SECRET;
   if (!secret) return new Response(JSON.stringify({ error: "server_error" }), { status: 500, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
-  const token = jwt.sign(payload, secret, { expiresIn: "1h" });
+
+  const email = (viewer as any).email ?? null;
+  const token = jwt.sign({ email, scope: ["bridge:access"] }, secret, { expiresIn: "1h" });
   return new Response(JSON.stringify({ token }), { status: 200, headers: { "content-type": "application/json", ...corsHeaders(ctx.request) } });
 };
 
