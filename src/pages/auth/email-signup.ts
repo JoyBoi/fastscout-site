@@ -1,8 +1,5 @@
 import type { APIRoute } from "astro";
-import bcrypt from "bcryptjs";
-import { getConvexClient } from "../../lib/convex";
-import { api } from "../../../convex/_generated/api";
-import { makeSessionCookieHeader } from "../../lib/auth";
+import { cookieOptions } from "../../lib/cookie";
 
 export const prerender = false;
 
@@ -11,38 +8,40 @@ export const POST: APIRoute = async (ctx) => {
   const email = formData.get("email")?.toString()?.trim()?.toLowerCase();
   const password = formData.get("password")?.toString();
   const locale = formData.get("locale")?.toString() || "fr";
+  const siteUrl = import.meta.env.SITE_URL?.trim();
+  const convexSiteUrl = import.meta.env.PUBLIC_CONVEX_SITE_URL?.trim();
 
   if (!email || !password) {
-    return ctx.redirect(`/${locale}/auth?error=missing_fields`);
+    return new Response(null, { status: 302, headers: { Location: `/${locale}/auth?error=missing_fields&mode=signup` } });
   }
 
   if (password.length < 8) {
-    return ctx.redirect(`/${locale}/auth?error=weak_password&mode=signup`);
+    return new Response(null, { status: 302, headers: { Location: `/${locale}/auth?error=weak_password&mode=signup` } });
   }
 
-  const convex = getConvexClient();
-  const passwordHash = await bcrypt.hash(password, 10);
+  const res = await fetch(`${convexSiteUrl}/api/auth/signin/password`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password, flow: "signUp" }),
+  }).catch(() => null);
 
-  let userId: string;
-  try {
-    userId = await convex.mutation(api.users.create, {
-      email,
-      passwordHash,
-    });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("email_exists")) {
-      return ctx.redirect(`/${locale}/auth?error=email_exists&mode=signup`);
-    }
-    return ctx.redirect(`/${locale}/auth?error=signup_failed&mode=signup`);
+  if (!res || !res.ok) {
+    const text = await res?.text().catch(() => "");
+    const error = text.includes("already") ? "email_exists" : "signup_failed";
+    return new Response(null, { status: 302, headers: { Location: `/${locale}/auth?error=${error}&mode=signup` } });
   }
 
-  const cookieHeader = makeSessionCookieHeader(ctx.request, userId, email);
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: `/${locale}/dashboard?welcome=1`,
-      "Set-Cookie": cookieHeader,
-    },
-  });
+  const data = (await res.json()) as { token?: string; redirect?: string; verifier?: string };
+
+  if (data.redirect && data.verifier) {
+    // Email verification required
+    return new Response(null, { status: 302, headers: { Location: `/${locale}/auth?message=check_email&mode=signup` } });
+  }
+
+  if (!data.token) {
+    return new Response(null, { status: 302, headers: { Location: `/${locale}/auth?error=signup_failed&mode=signup` } });
+  }
+
+  ctx.cookies.set("convex_token", data.token, { ...cookieOptions(siteUrl), maxAge: 60 * 60 * 24 });
+  return new Response(null, { status: 302, headers: { Location: `/${locale}/dashboard?welcome=1` } });
 };

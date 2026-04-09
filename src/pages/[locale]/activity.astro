@@ -2,21 +2,19 @@
 export const prerender = false;
 
 import Layout from "../../shared/Layout.astro";
-import { getAuthenticatedUser } from "../../lib/auth";
-import { getConvexClient } from "../../lib/convex";
+import { getConvexServerClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
 import { getLocaleFromUrl } from "../../i18n";
 
 const locale = getLocaleFromUrl(Astro.url);
 const localePath = (path: string) => `/${locale}${path}`;
 
-const sessionUser = getAuthenticatedUser(Astro.request);
-if (!sessionUser) return Astro.redirect(localePath("/auth"));
-const userId = sessionUser.userId;
-const email = sessionUser.email;
+const { client: convex } = getConvexServerClient(Astro.request);
+const viewer = await convex.query(api.users.getViewer);
+if (!viewer) return Astro.redirect(localePath("/auth"));
+const userId = viewer._id as string;
+const email = viewer.email as string | undefined;
 const avatarInitial = (email || "U").slice(0, 1).toUpperCase();
-
-const convex = getConvexClient();
 
 // Fetch stats for current month
 const now = new Date();

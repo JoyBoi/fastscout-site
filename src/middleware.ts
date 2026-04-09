@@ -1,5 +1,4 @@
 import type { MiddlewareHandler } from "astro";
-import { getAuthenticatedUser } from "./lib/auth";
 
 // Security headers applied to all responses
 const securityHeaders: Record<string, string> = {
@@ -21,14 +20,18 @@ function addSecurityHeaders(response: Response): Response {
   });
 }
 
+function hasConvexToken(request: Request): boolean {
+  const cookie = request.headers.get("cookie") ?? "";
+  return /(?:^|;\s*)convex_token=/.test(cookie);
+}
+
 export const onRequest: MiddlewareHandler = async (ctx, next) => {
   const { url } = ctx;
   const pathname = new URL(url).pathname;
 
-  // Protect dashboard: redirect to auth page if not logged in
+  // Protect dashboard: redirect to auth page if no session cookie
   if (pathname.startsWith("/dashboard") || pathname.match(/^\/[a-z]{2}\/dashboard/)) {
-    const user = getAuthenticatedUser(ctx.request);
-    if (!user) {
+    if (!hasConvexToken(ctx.request)) {
       const locale = pathname.match(/^\/([a-z]{2})\//)?.[1] || "fr";
       return addSecurityHeaders(
         new Response(null, { status: 302, headers: { Location: `/${locale}/auth` } })
@@ -36,10 +39,9 @@ export const onRequest: MiddlewareHandler = async (ctx, next) => {
     }
   }
 
-  // Protect token endpoint: return 401 if not logged in
+  // Protect token endpoint: return 401 if no session cookie
   if (pathname.startsWith("/api/token")) {
-    const user = getAuthenticatedUser(ctx.request);
-    if (!user) {
+    if (!hasConvexToken(ctx.request)) {
       return addSecurityHeaders(
         new Response(JSON.stringify({ error: "unauthorized" }), {
           status: 401,

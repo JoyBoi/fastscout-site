@@ -1,11 +1,11 @@
 import type { APIRoute } from "astro";
 import { getConvexClient } from "../../../lib/convex";
+import { cookieOptions } from "../../../lib/cookie";
 import { api } from "../../../../convex/_generated/api";
 export const prerender = false;
 
 export const GET: APIRoute = async (ctx) => {
   const siteUrl = import.meta.env.SITE_URL?.trim();
-  const convexSiteUrl = import.meta.env.PUBLIC_CONVEX_SITE_URL?.trim();
   const redirectTo = `${siteUrl}/auth/callback`;
 
   const convex = getConvexClient();
@@ -29,6 +29,18 @@ export const GET: APIRoute = async (ctx) => {
     });
   }
 
-  // The redirect URL from Convex is the .convex.site URL — return it directly
-  return new Response(null, { status: 302, headers: { Location: result.redirect } });
+  // Store verifier in a short-lived cookie so callback.ts can use it
+  const headers = new Headers({ Location: result.redirect });
+  if (result.verifier) {
+    const opts = cookieOptions(siteUrl);
+    const secure = opts.secure ? "; Secure" : "";
+    const sameSite = `; SameSite=${opts.secure ? "None" : "Lax"}`;
+    const domain = opts.domain ? `; Domain=${opts.domain}` : "";
+    headers.append(
+      "Set-Cookie",
+      `convex_verifier=${encodeURIComponent(result.verifier)}; Path=/; Max-Age=600; HttpOnly${secure}${sameSite}${domain}`,
+    );
+  }
+
+  return new Response(null, { status: 302, headers });
 };

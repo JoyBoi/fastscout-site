@@ -4,9 +4,7 @@ export const prerender = false;
 import Layout from "../../shared/Layout.astro";
 import RenewalCountdown from "../../components/RenewalCountdown.astro";
 import LoadingButton from "../../components/LoadingButton.astro";
-import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../../lib/stripe";
-import { getAuthenticatedUser } from "../../lib/auth";
-import { getConvexClient } from "../../lib/convex";
+import { getConvexServerClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
 import { getLocaleFromUrl, useTranslations } from "../../i18n";
 
@@ -14,82 +12,47 @@ const locale = getLocaleFromUrl(Astro.url);
 const t = useTranslations(locale);
 const localePath = (path: string) => `/${locale}${path}`;
 
-const sessionUser = getAuthenticatedUser(Astro.request);
-if (!sessionUser) return Astro.redirect(localePath("/auth"));
-const userId = sessionUser.userId;
-const email = sessionUser.email;
-const userEmail = email;
+const { client } = getConvexServerClient(Astro.request);
+const viewer = await client.query(api.users.getViewer);
+if (!viewer) return Astro.redirect(localePath("/auth"));
 
-let sub = { active: false, customerId: undefined, priceId: undefined, periodEnd: undefined } as { active: boolean; customerId?: string; priceId?: string; periodEnd?: string };
+const email = viewer.email as string | undefined;
+const displayName = (viewer.name as string | undefined) ?? email ?? "User";
+const avatarInitial = displayName.slice(0, 1).toUpperCase();
+
 let invoices: Array<{ id: string; status: string | null; amount_due: number; currency: string; hosted_invoice_url: string | null; invoice_pdf: string | null; created: number }> = [];
 let nextBilling: string | null = null;
 let planLabel: string | null = null;
 let renewalDays: number | null = null;
-let lastInvoiceAmount: string | null = null;
-let lastInvoiceDate: string | null = null;
-const displayName = email;
-const avatarInitial = (displayName || "U").slice(0, 1).toUpperCase();
 let invoicesCount = 0;
 
-// Fetch subscription and billing data from Convex in parallel
-const convex = getConvexClient();
-const [status, billing] = await Promise.all([
-  convex.query(api.subscriptions.getByUserId, { userId }),
-  convex.query(api.billingCustomers.getByUserId, { userId }),
+const [subDoc, invoicesResult] = await Promise.all([
+  client.query(api.subscriptions.getStatus),
+  client.action(api.stripe.getInvoices).catch(() => ({ invoices: [] as typeof invoices })),
 ]);
 
-if (status) {
-  sub = { active: !!status.active, priceId: status.priceId ?? undefined, periodEnd: status.currentPeriodEnd ?? undefined };
-} else if (userId) {
-  if (billing?.stripeCustomerId) {
-    sub = await findActiveSubscriptionByCustomerId(billing.stripeCustomerId);
-  } else if (userEmail) {
-    sub = await findActiveSubscriptionByEmail(userEmail);
-  }
-}
+const subActive = subDoc ? (subDoc.status === "active" || subDoc.status === "trialing") : false;
+const priceId = subDoc?.priceId ?? undefined;
+const periodEndTs = subDoc?.periodEnd ?? undefined; // Unix seconds
 
-if (userEmail) {
-  let customerId = billing?.stripeCustomerId as string | undefined;
-  if (!customerId) {
-    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
-    customerId = customers.data[0]?.id;
-  }
-  if (customerId) {
-    const list = await stripe.invoices.list({ customer: customerId, limit: 20 });
-    invoices = list.data.map((i) => ({
-      id: i.id,
-      status: (i.status ?? null) as unknown as string | null,
-      amount_due: i.amount_due,
-      currency: i.currency,
-      hosted_invoice_url: i.hosted_invoice_url ?? null,
-      invoice_pdf: i.invoice_pdf ?? null,
-      created: i.created,
-    }));
-  }
-}
+invoices = (invoicesResult as { invoices: typeof invoices }).invoices ?? [];
 invoicesCount = invoices.length;
-if (invoices.length > 0) {
-  const latest = invoices.reduce((a, b) => (a.created > b.created ? a : b));
-  lastInvoiceAmount = `${(latest.amount_due / 100).toFixed(2)} ${latest.currency.toUpperCase()}`;
-  lastInvoiceDate = new Date(latest.created * 1000).toLocaleDateString();
+
+if (periodEndTs) {
+  const dt = new Date(periodEndTs * 1000);
+  nextBilling = dt.toLocaleDateString();
+  const diffMs = dt.getTime() - Date.now();
+  renewalDays = diffMs > 0 ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : 0;
 }
-if (sub.periodEnd) {
-  try {
-    const dt = new Date(sub.periodEnd);
-    nextBilling = dt.toLocaleDateString();
-    const diffMs = dt.getTime() - Date.now();
-    renewalDays = diffMs > 0 ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : 0;
-  } catch {}
-}
-const monthlyPrice = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
-const yearlyPrice = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
-const quarterlyPrice = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
-const halfyearlyPrice = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
-if (sub.priceId) {
-  if (monthlyPrice && sub.priceId === monthlyPrice) planLabel = "Starter Monthly";
-  else if (yearlyPrice && sub.priceId === yearlyPrice) planLabel = "Starter Annual";
-  else if (quarterlyPrice && sub.priceId === quarterlyPrice) planLabel = "Pro Monthly";
-  else if (halfyearlyPrice && sub.priceId === halfyearlyPrice) planLabel = "Pro Annual";
+if (priceId) {
+  const monthlyPrice = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
+  const yearlyPrice = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
+  const quarterlyPrice = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
+  const halfyearlyPrice = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
+  if (monthlyPrice && priceId === monthlyPrice) planLabel = "Starter Monthly";
+  else if (yearlyPrice && priceId === yearlyPrice) planLabel = "Starter Annual";
+  else if (quarterlyPrice && priceId === quarterlyPrice) planLabel = "Pro Monthly";
+  else if (halfyearlyPrice && priceId === halfyearlyPrice) planLabel = "Pro Annual";
 }
 const urlError = new URL(Astro.request.url).searchParams.get("error");
 const urlSuccess = new URL(Astro.request.url).searchParams.get("success");
@@ -160,7 +123,7 @@ if (urlSuccess === "plan_change_scheduled") {
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
           Activity
         </a>
-        <form action="/auth/signout" method="POST">
+        <form action="/auth/signout" method="GET" data-astro-reload>
           <button class="btn btn-outline dash-signout">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign out
@@ -203,14 +166,14 @@ if (urlSuccess === "plan_change_scheduled") {
     <div class="dash-stats animate-enter stagger-1">
       <div class="dash-stat">
         <div class="dash-stat-label">Plan</div>
-        <div class="dash-stat-value">{planLabel ?? (sub.active ? "Active" : "Free")}</div>
+        <div class="dash-stat-value">{planLabel ?? (subActive ? "Active" : "Free")}</div>
       </div>
       <div class="dash-stat-divider"></div>
       <div class="dash-stat">
         <div class="dash-stat-label">Status</div>
         <div class="dash-stat-value">
-          <span class={`dash-status-dot ${sub.active ? 'active' : 'inactive'}`}></span>
-          {sub.active ? "Active" : "Inactive"}
+          <span class={`dash-status-dot ${subActive ? 'active' : 'inactive'}`}></span>
+          {subActive ? "Active" : "Inactive"}
         </div>
       </div>
       <div class="dash-stat-divider"></div>
@@ -236,15 +199,15 @@ if (urlSuccess === "plan_change_scheduled") {
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
               <div>
                 <p class="sub-plan-badge">Current Plan</p>
-                <h2 class="sub-plan-title">{planLabel ?? (sub.active ? "Active Plan" : "Free Tier")}</h2>
+                <h2 class="sub-plan-title">{planLabel ?? (subActive ? "Active Plan" : "Free Tier")}</h2>
               </div>
-              {sub.active
+              {subActive
                 ? <div class="status-pill active"><span class="status-pill-dot"></span>Active</div>
                 : <div class="status-pill inactive">Inactive</div>
               }
             </div>
             <div style="margin-top: auto;">
-              {sub.active ? (
+              {subActive ? (
                 <div style="display:flex; justify-content:space-between; align-items:flex-end;">
                   <div>
                     <p style="color: rgba(255,255,255,0.6); font-size: 11px; text-transform:uppercase; letter-spacing:1px; margin-bottom: 4px;">Next billing</p>
@@ -309,7 +272,7 @@ if (urlSuccess === "plan_change_scheduled") {
       <div style="display: flex; flex-direction: column; gap: 20px;">
 
         <!-- Quick Actions -->
-        {sub.active && (
+        {subActive && (
           <div class="card animate-enter stagger-2">
             <h3 class="card-heading" style="margin-bottom: 14px;">Quick Actions</h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -328,7 +291,7 @@ if (urlSuccess === "plan_change_scheduled") {
           </div>
         )}
 
-        {!sub.active && (
+        {!subActive && (
           <div class="card animate-enter stagger-2" style="background: var(--gradient-subtle); border-color: rgba(6, 182, 212, 0.15);">
             <div style="text-align:center; padding: 8px 0;">
               <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>

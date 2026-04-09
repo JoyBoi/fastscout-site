@@ -3,18 +3,14 @@ export const prerender = false;
 
 import Layout from "../shared/Layout.astro";
 import LoadingButton from "../components/LoadingButton.astro";
-import stripe, { findActiveSubscriptionByEmail, findActiveSubscriptionByCustomerId } from "../lib/stripe";
-import { getAuthenticatedUser } from "../lib/auth";
-import { getConvexClient } from "../lib/convex";
+import { getConvexServerClient } from "../lib/convex";
 import { api } from "../../convex/_generated/api";
 
 let monthlyId = import.meta.env.STRIPE_PRICE_ID_MONTHLY as string | undefined;
 const yearlyId = import.meta.env.STRIPE_PRICE_ID_YEARLY as string | undefined;
 const fallbackId = import.meta.env.STRIPE_PRICE_ID as string | undefined;
 if (!monthlyId && fallbackId) monthlyId = fallbackId;
-const sessionUser = getAuthenticatedUser(Astro.request);
-const userId = sessionUser?.userId as string | undefined;
-const userEmail = sessionUser?.email as string | undefined;
+
 const urlError = new URL(Astro.request.url).searchParams.get("error");
 let errorBanner: string | null = null;
 if (urlError === "rate_limited") errorBanner = "Too many requests. Try again in a minute.";
@@ -24,28 +20,11 @@ else if (urlError === "already_subscribed") errorBanner = "You already have an a
 let subActive = false;
 let subPriceId: string | undefined;
 
-const convex = getConvexClient();
-const [status, billing] = await Promise.all([
-  userId ? convex.query(api.subscriptions.getByUserId, { userId }) : Promise.resolve(null),
-  userId ? convex.query(api.billingCustomers.getByUserId, { userId }) : Promise.resolve(null),
-]);
-
-if (status) {
-  subActive = !!status.active;
-  subPriceId = status.priceId ?? undefined;
-}
-
-if (!subActive && userEmail && userId) {
-  const customerId = billing?.stripeCustomerId as string | undefined;
-  if (customerId) {
-    const res = await findActiveSubscriptionByCustomerId(customerId);
-    subActive = res.active;
-    subPriceId = subPriceId ?? res.priceId;
-  } else {
-    const res = await findActiveSubscriptionByEmail(userEmail);
-    subActive = res.active;
-    subPriceId = subPriceId ?? res.priceId;
-  }
+const { client } = getConvexServerClient(Astro.request);
+const subDoc = await client.query(api.subscriptions.getStatus);
+if (subDoc) {
+  subActive = subDoc.status === "active" || subDoc.status === "trialing";
+  subPriceId = subDoc.priceId ?? undefined;
 }
 
 const quarterlyId = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;

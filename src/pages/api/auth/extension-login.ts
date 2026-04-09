@@ -1,7 +1,5 @@
 import type { APIRoute } from "astro";
-import bcrypt from "bcryptjs";
 import { corsHeaders, preflight } from "../../../lib/cors";
-import { makeSessionCookieHeader } from "../../../lib/auth";
 import { getConvexClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
 
@@ -9,8 +7,8 @@ export const prerender = false;
 
 // ---------------------------------------------------------------------------
 // POST /api/auth/extension-login
-// Accepts { email, password } from extension popup, validates credentials,
-// sets ab_session cookie, returns JSON result.
+// Accepts { email, password } from extension popup, validates credentials via
+// Convex Auth password provider, returns a short-lived extension JWT.
 // ---------------------------------------------------------------------------
 export const POST: APIRoute = async (ctx) => {
   const pf = preflight(ctx.request);
@@ -18,10 +16,6 @@ export const POST: APIRoute = async (ctx) => {
 
   const headers = { "content-type": "application/json", ...corsHeaders(ctx.request) };
 
-  // Rate limit
-  const convex = getConvexClient();
-
-  // Parse body
   let payload: { email?: string; password?: string };
   try {
     payload = await ctx.request.json();
@@ -36,13 +30,11 @@ export const POST: APIRoute = async (ctx) => {
     return new Response(JSON.stringify({ error: "missing_fields" }), { status: 400, headers });
   }
 
-  // Rate limit using existing token policy (10/5min) to prevent brute force
+  // Rate limit
+  const convex = getConvexClient();
   let allowed: boolean;
   try {
-    allowed = await convex.mutation(api.rateLimit.checkRateLimit, {
-      userId: email,
-      action: "token",
-    });
+    allowed = await convex.mutation(api.rateLimit.checkRateLimit, { userId: email, action: "token" });
   } catch {
     allowed = false;
   }
@@ -50,34 +42,26 @@ export const POST: APIRoute = async (ctx) => {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers });
   }
 
-  // Validate credentials
-  const user = await convex.query(api.users.getByEmail, { email });
+  // Sign in via Convex Auth password provider
+  const convexSiteUrl = import.meta.env.PUBLIC_CONVEX_SITE_URL?.trim();
+  const res = await fetch(`${convexSiteUrl}/api/auth/signin/password`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password, flow: "signIn" }),
+  }).catch(() => null);
 
-  if (!user || !user.passwordHash) {
+  if (!res || !res.ok) {
     return new Response(JSON.stringify({ error: "invalid_credentials" }), { status: 401, headers });
   }
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
+  const data = (await res.json()) as { token?: string };
+  if (!data.token) {
     return new Response(JSON.stringify({ error: "invalid_credentials" }), { status: 401, headers });
   }
-
-  // Set session cookie
-  const cookieHeader = makeSessionCookieHeader(ctx.request, user._id, user.email);
 
   return new Response(
-    JSON.stringify({
-      ok: true,
-      email: user.email,
-      displayName: user.name || user.fullName || user.email,
-    }),
-    {
-      status: 200,
-      headers: {
-        ...headers,
-        "Set-Cookie": cookieHeader,
-      },
-    },
+    JSON.stringify({ ok: true, email, convex_token: data.token }),
+    { status: 200, headers },
   );
 };
 

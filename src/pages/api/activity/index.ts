@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
-import { getAuthenticatedUser } from "../../../lib/auth";
-import { getConvexClient } from "../../../lib/convex";
+import { getConvexServerClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
 
 export const prerender = false;
@@ -12,8 +11,9 @@ export const prerender = false;
 export const GET: APIRoute = async (ctx) => {
   const headers = { "content-type": "application/json" };
 
-  const sessionUser = getAuthenticatedUser(ctx.request);
-  if (!sessionUser) {
+  const { client: convex } = getConvexServerClient(ctx.request);
+  const viewer = await convex.query(api.users.getViewer);
+  if (!viewer) {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
   }
 
@@ -23,19 +23,12 @@ export const GET: APIRoute = async (ctx) => {
   const type = url.searchParams.get("type") || undefined;
   const requestedUserId = url.searchParams.get("userId");
 
-  // For now, always use the authenticated user's ID
-  // Admin override: check role if requestedUserId is provided
-  let targetUserId = sessionUser.userId;
-  if (requestedUserId && requestedUserId !== sessionUser.userId) {
-    const convex = getConvexClient();
-    const user = await convex.query(api.users.getByEmail, { email: sessionUser.email });
-    if (user?.role !== "admin") {
-      return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers });
-    }
-    targetUserId = requestedUserId;
+  // Use the authenticated user's ID; admin check is skipped (role not in new schema)
+  let targetUserId = viewer._id as string;
+  if (requestedUserId && requestedUserId !== targetUserId) {
+    // Only allow if the requesting user is the same
+    return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers });
   }
-
-  const convex = getConvexClient();
   try {
     const result = await convex.query(api.activityEvents.listByUser, {
       userId: targetUserId,

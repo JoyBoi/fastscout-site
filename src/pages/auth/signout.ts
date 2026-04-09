@@ -1,15 +1,13 @@
 import type { APIRoute } from "astro";
-import { makeClearCookieHeader } from "../../lib/auth";
+import { cookieOptions } from "../../lib/cookie";
 
 export const prerender = false;
 
-export const POST: APIRoute = async (ctx) => {
-  const cookieHeader = makeClearCookieHeader(ctx.request);
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: "/",
-      "Set-Cookie": cookieHeader,
-    },
-  });
-};
+function signOut(ctx: Parameters<APIRoute>[0]) {
+  const siteUrl = import.meta.env.SITE_URL?.trim();
+  ctx.cookies.set("convex_token", "", { ...cookieOptions(siteUrl), maxAge: 0 });
+  return new Response(null, { status: 302, headers: { Location: "/" } });
+}
+
+export const POST: APIRoute = signOut;
+export const GET: APIRoute = signOut;

@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
-import { getAuthenticatedUser } from "../../../lib/auth";
-import { getConvexClient } from "../../../lib/convex";
+import { getConvexServerClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
 
 export const prerender = false;
@@ -18,8 +17,9 @@ function escCsv(val: unknown): string {
 // GET /api/activity/export?from=2026-01-01&to=2026-04-04&type=all
 // ---------------------------------------------------------------------------
 export const GET: APIRoute = async (ctx) => {
-  const sessionUser = getAuthenticatedUser(ctx.request);
-  if (!sessionUser) {
+  const { client: convex } = getConvexServerClient(ctx.request);
+  const viewer = await convex.query(api.users.getViewer);
+  if (!viewer) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -31,19 +31,8 @@ export const GET: APIRoute = async (ctx) => {
     ? new Date(url.searchParams.get("to")!).getTime()
     : undefined;
   const type = url.searchParams.get("type");
-  const requestedUserId = url.searchParams.get("userId");
 
-  let targetUserId: string | undefined = sessionUser.userId;
-  if (requestedUserId && requestedUserId !== sessionUser.userId) {
-    const convex = getConvexClient();
-    const user = await convex.query(api.users.getByEmail, { email: sessionUser.email });
-    if (user?.role !== "admin") {
-      return new Response("Forbidden", { status: 403 });
-    }
-    targetUserId = requestedUserId === "all" ? undefined : requestedUserId;
-  }
-
-  const convex = getConvexClient();
+  const targetUserId: string | undefined = viewer._id as string;
   const events = await convex.query(api.activityEvents.exportByUser, {
     userId: targetUserId,
     from,

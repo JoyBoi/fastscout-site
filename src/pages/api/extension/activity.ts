@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../lib/cors";
-import { getAuthenticatedUser } from "../../../lib/auth";
+import jwt from "jsonwebtoken";
 import { getConvexClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
 
@@ -26,11 +26,18 @@ export const POST: APIRoute = async (ctx) => {
 
   const headers = { "content-type": "application/json", ...corsHeaders(ctx.request) };
 
-  const sessionUser = getAuthenticatedUser(ctx.request);
-  if (!sessionUser) {
+  const authHeader = ctx.request.headers.get("authorization") ?? "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!bearerToken) {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
   }
-  const userId = sessionUser.userId;
+  let tokenPayload: { email?: string };
+  try {
+    tokenPayload = jwt.verify(bearerToken, import.meta.env.JWT_SECRET!) as { email?: string };
+  } catch {
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
+  }
+  const userId = tokenPayload.email ?? "unknown";
 
   const convex = getConvexClient();
 
@@ -92,24 +99,7 @@ export const POST: APIRoute = async (ctx) => {
     );
   }
 
-  // Report billable events to Stripe Billing Meter (fire-and-forget, lazy-load stripe)
-  if (payload.type === "extraction" || payload.type === "manual_listing") {
-    try {
-      const billing = await convex.query(api.billingCustomers.getByUserId, { userId });
-      if (billing?.stripeCustomerId) {
-        const { default: stripeClient } = await import("../../../lib/stripe");
-        await stripeClient.billing.meterEvents.create({
-          event_name: "vehicle_listing",
-          payload: {
-            value: "1",
-            stripe_customer_id: billing.stripeCustomerId,
-          },
-        });
-      }
-    } catch (err) {
-      console.error("Failed to report meter event:", err);
-    }
-  }
+  // Billing meter reporting is handled server-side via Convex
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 };

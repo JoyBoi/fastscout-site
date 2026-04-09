@@ -2,18 +2,22 @@
 export const prerender = false;
 
 import Layout from "../../shared/Layout.astro";
-import { getAuthenticatedUser } from "../../lib/auth";
+import { getConvexServerClient } from "../../lib/convex";
 import { getConvexClient } from "../../lib/convex";
 import { api } from "../../../convex/_generated/api";
 
-const sessionUser = getAuthenticatedUser(Astro.request);
-if (!sessionUser) return Astro.redirect("/fr/auth");
+const { client } = getConvexServerClient(Astro.request);
+const viewer = await client.query(api.users.getViewer);
+if (!viewer) return Astro.redirect("/fr/auth");
 
-const convex = getConvexClient();
-const user = await convex.query(api.users.getByEmail, { email: sessionUser.email });
-if (!user || user.role !== "admin") {
+// Admin check: only allow specific emails (no role field in new schema)
+const adminEmails = (import.meta.env.ADMIN_EMAILS ?? "").split(",").map((e: string) => e.trim()).filter(Boolean);
+const viewerEmail = (viewer as any).email ?? "";
+if (adminEmails.length > 0 && !adminEmails.includes(viewerEmail)) {
   return new Response("Forbidden", { status: 403 });
 }
+
+const convex = getConvexClient();
 
 // Date range (default: last 30 days)
 const url = new URL(Astro.request.url);

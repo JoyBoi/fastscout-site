@@ -159,4 +159,12 @@ export default defineSchema({
     .index("by_userId_ts", ["userId", "ts"])
     .index("by_ts", ["ts"])
     .index("by_type_ts", ["type", "ts"]),
+
+  rateLimitEvents: defineTable({
+    userId: v.string(),
+    action: v.string(),
+    ts: v.number(),
+  })
+    .index("by_userId_action", ["userId", "action"])
+    .index("by_ts", ["ts"]),
 });

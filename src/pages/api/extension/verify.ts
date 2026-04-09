@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { corsHeaders, preflight } from "../../../lib/cors";
-import { getAuthenticatedUser } from "../../../lib/auth";
+import jwt from "jsonwebtoken";
 import { getConvexClient } from "../../../lib/convex";
 import { api } from "../../../../convex/_generated/api";
 
@@ -128,12 +128,19 @@ export const POST: APIRoute = async (ctx) => {
 
   const headers = { "content-type": "application/json", ...corsHeaders(ctx.request) };
 
-  // Auth
-  const sessionUser = getAuthenticatedUser(ctx.request);
-  if (!sessionUser) {
+  // Auth — validate Bearer JWT issued by /api/token
+  const authHeader = ctx.request.headers.get("authorization") ?? "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!bearerToken) {
     return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
   }
-  const userId = sessionUser.userId;
+  let tokenPayload: { email?: string };
+  try {
+    tokenPayload = jwt.verify(bearerToken, import.meta.env.JWT_SECRET!) as { email?: string };
+  } catch {
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
+  }
+  const userId = tokenPayload.email ?? "unknown";
 
   // Rate limit
   const convex = getConvexClient();
