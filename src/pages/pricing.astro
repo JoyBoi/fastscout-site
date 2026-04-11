@@ -29,6 +29,28 @@ if (subDoc) {
 
 const quarterlyId = import.meta.env.STRIPE_PRICE_ID_QUARTERLY as string | undefined;
 const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | undefined;
+
+// Tier ordering — higher number = higher tier. Used to detect upgrade vs downgrade.
+const tierByPriceId: Record<string, number> = {
+  ...(monthlyId    ? { [monthlyId]:    1 } : {}),
+  ...(yearlyId     ? { [yearlyId]:     2 } : {}),
+  ...(quarterlyId  ? { [quarterlyId]:  3 } : {}),
+  ...(halfyearlyId ? { [halfyearlyId]: 4 } : {}),
+};
+
+function planAction(targetId: string | undefined): { action: string; label: string | null } {
+  if (!targetId || !subActive || !subPriceId) return { action: "/api/checkout", label: null };
+  if (targetId === subPriceId) return { action: "/api/checkout", label: "Extend" };
+  const cur = tierByPriceId[subPriceId] ?? 0;
+  const tgt = tierByPriceId[targetId] ?? 0;
+  if (tgt > cur) return { action: "/api/checkout", label: "Upgrade" };
+  return { action: "/api/change-plan", label: "Switch at Renewal" };
+}
+
+const starterMonthlyBtn = planAction(monthlyId);
+const starterAnnualBtn  = planAction(yearlyId);
+const proMonthlyBtn     = planAction(quarterlyId);
+const proAnnualBtn      = planAction(halfyearlyId);
 ---
 <Layout title="Pricing">
   <section class="pricing-section" data-billing="monthly">
@@ -88,18 +110,16 @@ const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | unde
         </ul>
         <div class="plan-cta">
           <div class="cta-monthly">
-            {subActive && subPriceId === monthlyId ? (
-              <button class="btn-plan btn-plan--outline" disabled>Current plan</button>
-            ) : (
-              <form action="/api/checkout" method="POST"><input type="hidden" name="plan" value="monthly" /><LoadingButton variant="outline" style="width:100%;">Get Started</LoadingButton></form>
-            )}
+            <form action={starterMonthlyBtn.action} method="POST">
+              <input type="hidden" name="plan" value="monthly" />
+              <LoadingButton variant="outline" style="width:100%;">{starterMonthlyBtn.label ?? "Get Started"}</LoadingButton>
+            </form>
           </div>
           <div class="cta-annual">
-            {subActive && subPriceId === yearlyId ? (
-              <button class="btn-plan btn-plan--outline" disabled>Current plan</button>
-            ) : (
-              <form action="/api/checkout" method="POST"><input type="hidden" name="plan" value="annual" /><LoadingButton variant="outline" style="width:100%;">Get Started</LoadingButton></form>
-            )}
+            <form action={starterAnnualBtn.action} method="POST">
+              <input type="hidden" name="plan" value="annual" />
+              <LoadingButton variant="outline" style="width:100%;">{starterAnnualBtn.label ?? "Get Started"}</LoadingButton>
+            </form>
           </div>
         </div>
       </div>
@@ -135,18 +155,16 @@ const halfyearlyId = import.meta.env.STRIPE_PRICE_ID_HALFYEARLY as string | unde
         </ul>
         <div class="plan-cta">
           <div class="cta-monthly">
-            {subActive && subPriceId === quarterlyId ? (
-              <button class="btn-plan btn-plan--primary" disabled>Current plan</button>
-            ) : (
-              <form action="/api/checkout" method="POST"><input type="hidden" name="plan" value="quarterly" /><LoadingButton variant="primary" style="width:100%;">Go Pro</LoadingButton></form>
-            )}
+            <form action={proMonthlyBtn.action} method="POST">
+              <input type="hidden" name="plan" value="quarterly" />
+              <LoadingButton variant="primary" style="width:100%;">{proMonthlyBtn.label ?? "Go Pro"}</LoadingButton>
+            </form>
           </div>
           <div class="cta-annual">
-            {subActive && subPriceId === halfyearlyId ? (
-              <button class="btn-plan btn-plan--primary" disabled>Current plan</button>
-            ) : (
-              <form action="/api/checkout" method="POST"><input type="hidden" name="plan" value="halfyearly" /><LoadingButton variant="primary" style="width:100%;">Go Pro</LoadingButton></form>
-            )}
+            <form action={proAnnualBtn.action} method="POST">
+              <input type="hidden" name="plan" value="halfyearly" />
+              <LoadingButton variant="primary" style="width:100%;">{proAnnualBtn.label ?? "Go Pro"}</LoadingButton>
+            </form>
           </div>
         </div>
       </div>
