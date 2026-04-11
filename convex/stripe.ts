@@ -10,6 +10,13 @@ function getStripe(): Stripe {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" });
 }
 
+async function getActiveOrTrialingSub(stripe: Stripe, customerId: string): Promise<Stripe.Subscription | null> {
+  const active = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
+  if (active.data[0]) return active.data[0];
+  const trialing = await stripe.subscriptions.list({ customer: customerId, status: "trialing", limit: 1 });
+  return trialing.data[0] ?? null;
+}
+
 async function ensureStripeCustomer(
   ctx: { runQuery: Function; runMutation: Function },
   userId: string,
@@ -37,6 +44,12 @@ export function resolvePriceId(
   return prices[interval] ?? prices["default"];
 }
 
+function priceIntervalSeconds(interval: string, count: number): number {
+  if (interval === "year") return count * 365 * 24 * 3600;
+  if (interval === "week") return count * 7 * 24 * 3600;
+  return count * 30 * 24 * 3600; // month (and fallback)
+}
+
 export const createCheckout = action({
   args: { priceId: v.string() },
   handler: async (ctx, { priceId }) => {
@@ -47,13 +60,55 @@ export const createCheckout = action({
     if (!user?.email) throw new Error("no_email");
     const stripe = getStripe();
     const customerId = await ensureStripeCustomer(ctx, userId, user.email);
-    const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
-    if (subs.data.length > 0) throw new Error("already_subscribed");
+
+    const activeSubs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
+    const trialSubs = activeSubs.data.length === 0
+      ? await stripe.subscriptions.list({ customer: customerId, status: "trialing", limit: 1 })
+      : { data: [] };
+    const activeSub = activeSubs.data[0] ?? trialSubs.data[0] ?? null;
+
+    if (!activeSub) {
+      // No existing subscription — create a fresh one
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: customerId,
+        client_reference_id: userId,
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${process.env.SITE_URL}/dashboard`,
+        cancel_url: `${process.env.SITE_URL}/pricing`,
+      });
+      return { url: session.url };
+    }
+
+    // Active subscription exists — charge for an extension / plan switch.
+    // The webhook will push trial_end forward (no second concurrent subscription).
+    const price = await stripe.prices.retrieve(priceId);
+    const intervalSecs = priceIntervalSeconds(
+      price.recurring?.interval ?? "month",
+      price.recurring?.interval_count ?? 1,
+    );
+    const productId = typeof price.product === "string" ? price.product : (price.product as any).id;
+
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
+      mode: "payment",
       customer: customerId,
       client_reference_id: userId,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{
+        price_data: {
+          currency: price.currency,
+          unit_amount: price.unit_amount!,
+          product: productId,
+        },
+        quantity: 1,
+      }],
+      metadata: {
+        type: "extension",
+        userId,
+        subscriptionId: activeSub.id,
+        newPriceId: priceId,
+        currentPeriodEnd: String(activeSub.current_period_end),
+        intervalSecs: String(intervalSecs),
+      },
       success_url: `${process.env.SITE_URL}/dashboard`,
       cancel_url: `${process.env.SITE_URL}/pricing`,
     });
@@ -70,8 +125,7 @@ export const changePlan = action({
     const billing = (await ctx.runQuery(api.subscriptions.getBillingCustomer)) as { stripeCustomerId: string } | null;
     if (!billing?.stripeCustomerId) throw new Error("no_customer");
     const stripe = getStripe();
-    const subs = await stripe.subscriptions.list({ customer: billing.stripeCustomerId, status: "active", limit: 1 });
-    const sub = subs.data[0];
+    const sub = await getActiveOrTrialingSub(stripe, billing.stripeCustomerId);
     if (!sub) throw new Error("no_active_subscription");
     const currentPrice = sub.items.data[0]?.price?.id;
     if (currentPrice === targetPriceId) return { status: "unchanged" };
@@ -107,8 +161,7 @@ export const cancel = action({
     const billing = (await ctx.runQuery(api.subscriptions.getBillingCustomer)) as { stripeCustomerId: string } | null;
     if (!billing?.stripeCustomerId) throw new Error("no_customer");
     const stripe = getStripe();
-    const subs = await stripe.subscriptions.list({ customer: billing.stripeCustomerId, status: "active", limit: 1 });
-    const sub = subs.data[0];
+    const sub = await getActiveOrTrialingSub(stripe, billing.stripeCustomerId);
     if (!sub) throw new Error("no_active_subscription");
     if (atPeriodEnd) {
       await stripe.subscriptions.update(sub.id, { cancel_at_period_end: true });
@@ -128,8 +181,7 @@ export const cancelQueued = action({
     const billing = (await ctx.runQuery(api.subscriptions.getBillingCustomer)) as { stripeCustomerId: string } | null;
     if (!billing?.stripeCustomerId) throw new Error("no_customer");
     const stripe = getStripe();
-    const subs = await stripe.subscriptions.list({ customer: billing.stripeCustomerId, status: "active", limit: 1 });
-    const sub = subs.data[0];
+    const sub = await getActiveOrTrialingSub(stripe, billing.stripeCustomerId);
     if (!sub) throw new Error("no_active_subscription");
     const schedules = await stripe.subscriptionSchedules.list({ customer: billing.stripeCustomerId, limit: 20 });
     const schedule = schedules.data.find((s) => s.subscription === sub.id);
@@ -148,8 +200,7 @@ export const reactivate = action({
     const billing = (await ctx.runQuery(api.subscriptions.getBillingCustomer)) as { stripeCustomerId: string } | null;
     if (!billing?.stripeCustomerId) throw new Error("no_customer");
     const stripe = getStripe();
-    const subs = await stripe.subscriptions.list({ customer: billing.stripeCustomerId, status: "active", limit: 1 });
-    const sub = subs.data[0];
+    const sub = await getActiveOrTrialingSub(stripe, billing.stripeCustomerId);
     if (!sub?.cancel_at_period_end) return { status: "not_pending_cancel" };
     await stripe.subscriptions.update(sub.id, { cancel_at_period_end: false });
     return { status: "reactivated" };
@@ -222,6 +273,41 @@ export const processWebhookEvent = internalAction({
     const obj = JSON.parse(eventData) as Record<string, any>;
 
     if (eventType === "checkout.session.completed") {
+      const meta = (obj.metadata ?? {}) as Record<string, string>;
+
+      // Extension / plan-switch: push trial_end forward, change price if needed
+      if (meta.type === "extension") {
+        const { subscriptionId, newPriceId, currentPeriodEnd, intervalSecs, userId } = meta;
+        if (!subscriptionId || !newPriceId || !userId) return;
+        const stripe = getStripe();
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        const currentItemId = sub.items.data[0]?.id;
+        const currentPriceId = sub.items.data[0]?.price?.id;
+        const newTrialEnd = parseInt(currentPeriodEnd, 10) + parseInt(intervalSecs, 10);
+
+        const updateParams: Stripe.SubscriptionUpdateParams = {
+          trial_end: newTrialEnd,
+          proration_behavior: "none",
+          cancel_at_period_end: false,
+        };
+        if (currentPriceId !== newPriceId && currentItemId) {
+          updateParams.items = [{ id: currentItemId, price: newPriceId }];
+        }
+        await stripe.subscriptions.update(subscriptionId, updateParams);
+
+        // Optimistically update Convex — the subscription.updated webhook will also fire
+        await ctx.runMutation(internal.subscriptions.upsertFromWebhook, {
+          userId: userId as any,
+          stripeSubscriptionId: subscriptionId,
+          status: "trialing",
+          priceId: newPriceId,
+          periodEnd: newTrialEnd,
+          cancelAtPeriodEnd: false,
+        });
+        return;
+      }
+
+      // New subscription checkout
       const userId = obj.client_reference_id as string | undefined;
       const customerId = obj.customer as string | undefined;
       const subId = obj.subscription as string | undefined;
